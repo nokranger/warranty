@@ -18,7 +18,7 @@
               หมายเลขโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.nochok"/>
+              <b-input type="text" v-model="data.chokenumber"/>
             </div>
           </div>
         </b-col>
@@ -28,7 +28,7 @@
               เลขทะเบียนรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.novahicle"/>
+              <b-input type="text" v-model="data.carnumber"/>
             </div>
           </div>
         </b-col>
@@ -38,7 +38,7 @@
               ยี่ห้อรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.vahicle"/>
+              <b-input type="text" v-model="data.carbrand"/>
             </div>
           </div>
         </b-col>
@@ -50,7 +50,7 @@
               รุ่น/ปี
             </div>
             <div>
-              <b-input type="text" v-model="data.year"/>
+              <b-input type="text" v-model="data.carmodel"/>
             </div>
           </div>
         </b-col>
@@ -70,7 +70,7 @@
               บ้านเลขที่
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress"/>
+              <b-input type="text" v-model="data.housenumber"/>
             </div>
           </div>
         </b-col>
@@ -82,7 +82,7 @@
               หมู่บ้าน/อาคาร
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress2"/>
+              <b-input type="text" v-model="data.village"/>
             </div>
           </div>
         </b-col>
@@ -92,7 +92,7 @@
               ซอย
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress3"/>
+              <b-input type="text" v-model="data.alley"/>
             </div>
           </div>
         </b-col>
@@ -102,7 +102,7 @@
               ถนน
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress4"/>
+              <b-input type="text" v-model="data.road"/>
             </div>
           </div>
         </b-col>
@@ -114,7 +114,7 @@
               แขวง/ตำบล
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress5"/>
+              <b-input type="text" v-model="data.subdistrict"/>
             </div>
           </div>
         </b-col>
@@ -124,7 +124,7 @@
               เขต/อำเภอ
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress6"/>
+              <b-input type="text" v-model="data.district"/>
             </div>
           </div>
         </b-col>
@@ -134,7 +134,7 @@
               จังหวัด
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress7"/>
+              <b-input type="text" v-model="data.province"/>
             </div>
           </div>
         </b-col>
@@ -146,7 +146,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.noaddress8"/>
+              <b-input type="text" v-model="data.zipcode"/>
             </div>
           </div>
         </b-col>
@@ -156,7 +156,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.tel"/>
+              <b-input type="text" v-model="data.telephonenumber"/>
             </div>
           </div>
         </b-col>
@@ -166,7 +166,7 @@
               ชื่อร้าน/ศูนย์ติดตั้งโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.addressinstall"/>
+              <b-input type="text" v-model="data.namestaller"/>
             </div>
           </div>
         </b-col>
@@ -178,7 +178,7 @@
               ติดตั้งวันที่
             </div>
             <div>
-              <b-input type="text" v-model="data.dateinstall"/>
+              <b-input type="text" v-model="data.installerdate"/>
             </div>
           </div>
         </b-col>
@@ -188,7 +188,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.tel2"/>
+              <b-input type="text" v-model="data.installtelephone"/>
             </div>
           </div>
         </b-col>
@@ -198,7 +198,7 @@
               ที่อยู่
             </div>
             <div>
-              <b-input type="text" v-model="data.addressinstall2"/>
+              <b-input type="text" v-model="data.installeraddress"/>
             </div>
           </div>
         </b-col>
@@ -210,7 +210,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.addressinstall3"/>
+              <b-input type="text" v-model="data.zipcodeinstaller"/>
             </div>
           </div>
         </b-col>
@@ -220,7 +220,7 @@
               หมายเลขกิโลที่เริ่มติดตั้ง
             </div>
             <div>
-              <b-input type="text" v-model="data.nokilometer"/>
+              <b-input type="text" v-model="data.startofinstall"/>
             </div>
           </div>
         </b-col>
@@ -245,26 +245,27 @@
     data() {
       return {
         data: {
-          nochok: '',
-          novahicle: '',
-          vahicle: '',
-          year: '',
+          number: '',
+          chokenumber: '',
+          carnumber: '',
+          carbrand: '',
+          carmodel: '', 
           name: '',
-          noaddress: '',
-          noaddress2: '',
-          noaddress3: '',
-          noaddress4: '',
-          noaddress5: '',
-          noaddress6: '',
-          noaddress7: '',
-          noaddress8: '',
-          tel: '',
-          addressinstall: '',
-          dateinstall: '',
-          tel2: '',
-          addressinstall2: '',
-          addressinstall3: '',
-          nikilometer: '',
+          housenumber: '',
+          village: '',
+          alley: '',
+          road: '',
+          subdistrict: '',
+          district: '',
+          province: '',
+          zipcode: '',
+          telephonenumber: '',
+          namestaller: '',
+          installerdate: '',
+          installtelephone: '',
+          installeraddress: '',
+          zipcodeinstaller: '',
+          startofinstall: '',
         },
         items: [
           { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
