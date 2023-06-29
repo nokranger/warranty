@@ -3,7 +3,13 @@
     <b-container class="bv-example-row">
       บัตรลงทะเบียนการรับประกันโช้คอัพโทคิโคะ
       <div>
-        No.________________
+        <b-row>
+          <b-col></b-col>
+          <b-col></b-col>
+          <b-col>
+            No.________________
+          </b-col>
+        </b-row>
       </div>
       <b-row>
         <b-col>
@@ -226,8 +232,10 @@
       </div>
       <br>
       <div>
-        **โปรดกรอดข้อความให้ละเอียดชัดเจนและส่งมายังบริษัทฯ ภายใน 14 วัน นับจากวันที่ติดตั้ง มิฉะนั้นถือว่าสละสิทธิ์
-        **หมายเลขโช้คอัพถ้ามีรอยแก้ไขหรือขูดลบถือว่าโมฆะ
+        *โปรดกรอดข้อความให้ละเอียดชัดเจนและส่งมายังบริษัทฯ ภายใน 14 วัน นับจากวันที่ติดตั้ง มิฉะนั้นถือว่าสละสิทธิ์
+        <div style="color: red;">
+          **หมายเลขโช้คอัพถ้ามีรอยแก้ไขหรือขูดลบถือว่าโมฆะ
+        </div>
       </div>
     </b-container>
   </div>
@@ -236,7 +244,28 @@
   export default {
     data() {
       return {
-        data: [],
+        data: {
+          nochok: '',
+          novahicle: '',
+          vahicle: '',
+          year: '',
+          name: '',
+          noaddress: '',
+          noaddress2: '',
+          noaddress3: '',
+          noaddress4: '',
+          noaddress5: '',
+          noaddress6: '',
+          noaddress7: '',
+          noaddress8: '',
+          tel: '',
+          addressinstall: '',
+          dateinstall: '',
+          tel2: '',
+          addressinstall2: '',
+          addressinstall3: '',
+          nikilometer: '',
+        },
         items: [
           { age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
           { age: 21, first_name: 'Larsen', last_name: 'Shaw' },
