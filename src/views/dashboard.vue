@@ -236,6 +236,9 @@
         <div style="color: red;">
           **หมายเลขโช้คอัพถ้ามีรอยแก้ไขหรือขูดลบถือว่าโมฆะ
         </div>
+        <div>
+          {{data}}
+        </div>
       </div>
     </b-container>
   </div>
