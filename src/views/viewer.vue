@@ -18,7 +18,7 @@
               หมายเลขโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.chokenumber" />
+              <b-input type="text" v-model="data.chokenumber" disabled/>
             </div>
           </div>
         </b-col>
@@ -28,7 +28,7 @@
               เลขทะเบียนรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.carnumber"/>
+              <b-input type="text" v-model="data.carnumber" disabled/>
             </div>
           </div>
         </b-col>
@@ -38,7 +38,7 @@
               ยี่ห้อรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.carbrand"/>
+              <b-input type="text" v-model="data.carbrand" disabled/>
             </div>
           </div>
         </b-col>
@@ -50,7 +50,7 @@
               รุ่น/ปี
             </div>
             <div>
-              <b-input type="text" v-model="data.carmodel"/>
+              <b-input type="text" v-model="data.carmodel" disabled/>
             </div>
           </div>
         </b-col>
@@ -60,7 +60,7 @@
               ชื่อ-นามสกุลผู้ซื้อ
             </div>
             <div>
-              <b-input type="text" v-model="data.name"/>
+              <b-input type="text" v-model="data.name" disabled/>
             </div>
           </div>
         </b-col>
@@ -70,7 +70,7 @@
               บ้านเลขที่
             </div>
             <div>
-              <b-input type="text" v-model="data.housenumber"/>
+              <b-input type="text" v-model="data.housenumber" disabled/>
             </div>
           </div>
         </b-col>
@@ -82,7 +82,7 @@
               หมู่บ้าน/อาคาร
             </div>
             <div>
-              <b-input type="text" v-model="data.village"/>
+              <b-input type="text" v-model="data.village" disabled/>
             </div>
           </div>
         </b-col>
@@ -92,7 +92,7 @@
               ซอย
             </div>
             <div>
-              <b-input type="text" v-model="data.alley"/>
+              <b-input type="text" v-model="data.alley" disabled/>
             </div>
           </div>
         </b-col>
@@ -102,7 +102,7 @@
               ถนน
             </div>
             <div>
-              <b-input type="text" v-model="data.road"/>
+              <b-input type="text" v-model="data.road" disabled/>
             </div>
           </div>
         </b-col>
@@ -114,7 +114,7 @@
               แขวง/ตำบล
             </div>
             <div>
-              <b-input type="text" v-model="data.subdistrict"/>
+              <b-input type="text" v-model="data.subdistrict" disabled/>
             </div>
           </div>
         </b-col>
@@ -124,7 +124,7 @@
               เขต/อำเภอ
             </div>
             <div>
-              <b-input type="text" v-model="data.district"/>
+              <b-input type="text" v-model="data.district" disabled/>
             </div>
           </div>
         </b-col>
@@ -134,7 +134,7 @@
               จังหวัด
             </div>
             <div>
-              <b-input type="text" v-model="data.province"/>
+              <b-input type="text" v-model="data.province" disabled/>
             </div>
           </div>
         </b-col>
@@ -146,7 +146,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.zipcode"/>
+              <b-input type="text" v-model="data.zipcode" disabled/>
             </div>
           </div>
         </b-col>
@@ -156,7 +156,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.telephonenumber"/>
+              <b-input type="text" v-model="data.telephonenumber" disabled/>
             </div>
           </div>
         </b-col>
@@ -166,7 +166,7 @@
               ชื่อร้าน/ศูนย์ติดตั้งโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.namestaller"/>
+              <b-input type="text" v-model="data.namestaller" disabled/>
             </div>
           </div>
         </b-col>
@@ -178,7 +178,7 @@
               ติดตั้งวันที่
             </div>
             <div>
-              <b-input type="text" v-model="data.installerdate"/>
+              <b-input type="text" v-model="data.installerdate" disabled/>
             </div>
           </div>
         </b-col>
@@ -188,7 +188,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.installtelephone"/>
+              <b-input type="text" v-model="data.installtelephone" disabled/>
             </div>
           </div>
         </b-col>
@@ -198,7 +198,7 @@
               ที่อยู่
             </div>
             <div>
-              <b-input type="text" v-model="data.installeraddress"/>
+              <b-input type="text" v-model="data.installeraddress" disabled/>
             </div>
           </div>
         </b-col>
@@ -210,7 +210,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.zipcodeinstaller"/>
+              <b-input type="text" v-model="data.zipcodeinstaller" disabled/>
             </div>
           </div>
         </b-col>
@@ -220,18 +220,18 @@
               หมายเลขกิโลที่เริ่มติดตั้ง
             </div>
             <div>
-              <b-input type="text" v-model="data.startofinstall"/>
+              <b-input type="text" v-model="data.startofinstall" disabled/>
             </div>
           </div>
         </b-col>
         <b-col></b-col>
       </b-row>
       <br>
-      <div>
+      <!-- <div>
         <b-button variant="success" v-on:click="sendData()">ส่งคำร้อง</b-button>
-      </div>
+      </div> -->
       <br>
-      <div>
+      <!-- <div>
         *โปรดกรอดข้อความให้ละเอียดชัดเจนและส่งมายังบริษัทฯ ภายใน 14 วัน นับจากวันที่ติดตั้ง มิฉะนั้นถือว่าสละสิทธิ์
         <div style="color: red;">
           **หมายเลขโช้คอัพถ้ามีรอยแก้ไขหรือขูดลบถือว่าโมฆะ
@@ -239,7 +239,7 @@
         <div>
           {{data}}
         </div>
-      </div>
+      </div> -->
     </b-container>
   </div>
 </template>
@@ -249,7 +249,7 @@ import axios from 'axios'
     data() {
       return {
         data: {
-          number: 'ABCDEFR',
+          number: '',
           chokenumber: '',
           carnumber: '',
           carbrand: '',
