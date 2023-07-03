@@ -244,6 +244,7 @@
   </div>
 </template>
 <script>
+import axios from 'axios'
   export default {
     data() {
       return {
@@ -276,6 +277,13 @@
           { age: 89, first_name: 'Geneva', last_name: 'Wilson' },
           { age: 38, first_name: 'Jami', last_name: 'Carney' }
         ]
+      }
+    },
+    methods: {
+      sendData() {
+        axios.post('localhost:8080/test', this.data).then((res) => {
+          console.log('show data', res)
+        })
       }
     }
   }
