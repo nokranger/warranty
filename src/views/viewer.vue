@@ -1,7 +1,7 @@
 <template>
   <div>
     <b-container class="bv-example-row">
-      บัตรลงทะเบียนการรับประกันโช้คอัพโทคิโคะ
+      ข้อมูลผู้ลงทะเบียนการรับประกันโช้คอัพโทคิโคะ
       <div>
         <b-row>
           <b-col></b-col>

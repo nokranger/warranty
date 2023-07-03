@@ -1,11 +1,13 @@
 <template>
   <div>
     Show Data
-    <b-table :items="items">
+    <b-container>
+      <b-table :items="items">
       <template v-slot:cell(number)="data">
-          <a :href="data.item.number" target="_blank">{{ data.item.number }}</a>
+          <a :href="'viewer'" target="_blank">{{ data.item.number }}</a>
       </template>
     </b-table>
+    </b-container>
     <!-- <div>
       {{ items }}
     </div> -->
