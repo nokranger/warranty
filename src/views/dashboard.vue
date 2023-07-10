@@ -15,9 +15,9 @@
         <b-col>
           <div>
             <div>
-              หมายเลขโช้ค
-            </div>
-            <div>
+              <div class="something">
+                หมายเลขโช้ค
+              </div>
               <b-input type="text" v-model="data.chokenumber" />
             </div>
           </div>
@@ -42,8 +42,6 @@
             </div>
           </div>
         </b-col>
-      </b-row>
-      <b-row>
         <b-col>
           <div>
             <div>
@@ -54,6 +52,8 @@
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -64,6 +64,8 @@
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -74,8 +76,6 @@
             </div>
           </div>
         </b-col>
-      </b-row>
-      <b-row>
         <b-col>
           <div>
             <div>
@@ -96,6 +96,8 @@
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -106,8 +108,6 @@
             </div>
           </div>
         </b-col>
-      </b-row>
-      <b-row>
         <b-col>
           <div>
             <div>
@@ -128,6 +128,8 @@
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -138,8 +140,6 @@
             </div>
           </div>
         </b-col>
-      </b-row>
-      <b-row>
         <b-col>
           <div>
             <div>
@@ -160,6 +160,8 @@
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -170,8 +172,6 @@
             </div>
           </div>
         </b-col>
-      </b-row>
-      <b-row>
         <b-col>
           <div>
             <div>
@@ -188,10 +188,12 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.installtelephone"/>
+              <b-input type="text" v-model="data.installertelephone"/>
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -202,8 +204,6 @@
             </div>
           </div>
         </b-col>
-      </b-row>
-      <b-row>
         <b-col>
           <div>
             <div>
@@ -214,6 +214,8 @@
             </div>
           </div>
         </b-col>
+      </b-row>
+      <b-row>
         <b-col>
           <div>
             <div>
@@ -224,6 +226,7 @@
             </div>
           </div>
         </b-col>
+        <b-col></b-col>
         <b-col></b-col>
       </b-row>
       <br>
@@ -266,7 +269,7 @@ import axios from 'axios'
           telephonenumber: '',
           namestaller: '',
           installerdate: '',
-          installtelephone: '',
+          installertelephone: '',
           installeraddress: '',
           zipcodeinstaller: '',
           startofinstall: '',
@@ -290,3 +293,15 @@ import axios from 'axios'
     }
   }
 </script>
+<style scoped>
+div.a {float: left;}
+.something {
+  float: left;
+}
+input[type="text"] {
+border: none;
+border-bottom: 1px solid;
+border-radius: 0;
+float: left;
+}
+</style>
