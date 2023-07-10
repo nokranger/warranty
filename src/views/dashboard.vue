@@ -15,6 +15,7 @@
         <b-col>
           <div>
             <div>
+              <b-container></b-container>
               <div class="something">
                 หมายเลขโช้ค
               </div>
