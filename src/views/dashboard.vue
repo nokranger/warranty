@@ -19,7 +19,7 @@
               <div class="something">
                 หมายเลขโช้ค
               </div>
-              <b-input type="text" v-model="data.chokenumber" />
+                <b-input type="text" v-model="data.chokenumber" placeholder="หมายเลขโช้ค"/>
             </div>
           </div>
         </b-col>
@@ -29,7 +29,7 @@
               เลขทะเบียนรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.carnumber"/>
+              <b-input type="text" v-model="data.carnumber" placeholder="เลขทะเบียนรถ"/>
             </div>
           </div>
         </b-col>
@@ -39,7 +39,7 @@
               ยี่ห้อรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.carbrand"/>
+              <b-input type="text" v-model="data.carbrand" placeholder="ยี่ห้อรถ"/>
             </div>
           </div>
         </b-col>
@@ -49,7 +49,7 @@
               รุ่น/ปี
             </div>
             <div>
-              <b-input type="text" v-model="data.carmodel"/>
+              <b-input type="text" v-model="data.carmodel" placeholder="รุ่นปี"/>
             </div>
           </div>
         </b-col>
@@ -61,7 +61,7 @@
               ชื่อ-นามสกุลผู้ซื้อ
             </div>
             <div>
-              <b-input type="text" v-model="data.name"/>
+              <b-input type="text" v-model="data.name" placeholder="ชื่อ-นามสกุลผู้ซื้อ"/>
             </div>
           </div>
         </b-col>
@@ -73,7 +73,7 @@
               บ้านเลขที่
             </div>
             <div>
-              <b-input type="text" v-model="data.housenumber"/>
+              <b-input type="text" v-model="data.housenumber" placeholder="บ้านเลขที่"/>
             </div>
           </div>
         </b-col>
@@ -83,7 +83,7 @@
               หมู่บ้าน/อาคาร
             </div>
             <div>
-              <b-input type="text" v-model="data.village"/>
+              <b-input type="text" v-model="data.village" placeholder="หมู่บ้าน/อาคาร"/>
             </div>
           </div>
         </b-col>
@@ -93,7 +93,7 @@
               ซอย
             </div>
             <div>
-              <b-input type="text" v-model="data.alley"/>
+              <b-input type="text" v-model="data.alley" placeholder="ซอย"/>
             </div>
           </div>
         </b-col>
@@ -105,7 +105,7 @@
               ถนน
             </div>
             <div>
-              <b-input type="text" v-model="data.road"/>
+              <b-input type="text" v-model="data.road" placeholder="ถนน"/>
             </div>
           </div>
         </b-col>
@@ -115,7 +115,7 @@
               แขวง/ตำบล
             </div>
             <div>
-              <b-input type="text" v-model="data.subdistrict"/>
+              <b-input type="text" v-model="data.subdistrict" placeholder="แขวง/ตำบล"/>
             </div>
           </div>
         </b-col>
@@ -125,7 +125,7 @@
               เขต/อำเภอ
             </div>
             <div>
-              <b-input type="text" v-model="data.district"/>
+              <b-input type="text" v-model="data.district" placeholder="เขต/อำเภอ"/>
             </div>
           </div>
         </b-col>
@@ -137,7 +137,7 @@
               จังหวัด
             </div>
             <div>
-              <b-input type="text" v-model="data.province"/>
+              <b-input type="text" v-model="data.province" placeholder="จังหวัด"/>
             </div>
           </div>
         </b-col>
@@ -147,7 +147,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.zipcode"/>
+              <b-input type="text" v-model="data.zipcode" placeholder="รหัสไปรษณีย์"/>
             </div>
           </div>
         </b-col>
@@ -157,7 +157,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.telephonenumber"/>
+              <b-input type="text" v-model="data.telephonenumber" placeholder="เบอร์โทร"/>
             </div>
           </div>
         </b-col>
@@ -169,7 +169,7 @@
               ชื่อร้าน/ศูนย์ติดตั้งโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.namestaller"/>
+              <b-input type="text" v-model="data.namestaller" placeholder="ชื่อร้าน/ศูนย์ติดตั้งโช้ค"/>
             </div>
           </div>
         </b-col>
@@ -179,7 +179,7 @@
               ติดตั้งวันที่
             </div>
             <div>
-              <b-input type="text" v-model="data.installerdate"/>
+              <b-input type="text" v-model="data.installerdate" placeholder="ติดตั้งวันที่"/>
             </div>
           </div>
         </b-col>
@@ -189,7 +189,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.installertelephone"/>
+              <b-input type="text" v-model="data.installertelephone" placeholder="เบอร์โทร"/>
             </div>
           </div>
         </b-col>
@@ -201,7 +201,7 @@
               ที่อยู่
             </div>
             <div>
-              <b-input type="text" v-model="data.installeraddress"/>
+              <b-input type="text" v-model="data.installeraddress" placeholder="ที่อยู่"/>
             </div>
           </div>
         </b-col>
@@ -211,7 +211,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.zipcodeinstaller"/>
+              <b-input type="text" v-model="data.zipcodeinstaller" placeholder="รหัสไปรษณีย์"/>
             </div>
           </div>
         </b-col>
@@ -223,7 +223,7 @@
               หมายเลขกิโลที่เริ่มติดตั้ง
             </div>
             <div>
-              <b-input type="text" v-model="data.startofinstall"/>
+              <b-input type="text" v-model="data.startofinstall" placeholder="หมายเลขกิโลที่เริ่มติดตั้ง"/>
             </div>
           </div>
         </b-col>
@@ -297,12 +297,13 @@ import axios from 'axios'
 <style scoped>
 div.a {float: left;}
 .something {
-  float: left;
+  display: inline-block;
 }
 input[type="text"] {
 border: none;
 border-bottom: 1px solid;
 border-radius: 0;
-float: left;
+/* float: right; */
+display: inline-block;
 }
 </style>
