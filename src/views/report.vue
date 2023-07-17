@@ -4,7 +4,7 @@
     <b-container>
       <b-table :items="items">
       <template v-slot:cell(number)="data">
-          <a :href="'viewer'" target="_blank">{{ data.item.number }}</a>
+          <a :href="'viewer' + '/' + data.item.number" target="_blank">{{ data.item.number }}</a>
       </template>
     </b-table>
     </b-container>

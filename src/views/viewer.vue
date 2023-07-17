@@ -18,7 +18,7 @@
               หมายเลขโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.chokenumber" disabled/>
+              <b-input type="text" v-model="data.chokenumber" readonly/>
             </div>
           </div>
         </b-col>
@@ -28,7 +28,7 @@
               เลขทะเบียนรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.carnumber" disabled/>
+              <b-input type="text" v-model="data.carnumber" readonly/>
             </div>
           </div>
         </b-col>
@@ -38,7 +38,7 @@
               ยี่ห้อรถ
             </div>
             <div>
-              <b-input type="text" v-model="data.carbrand" disabled/>
+              <b-input type="text" v-model="data.carbrand" readonly/>
             </div>
           </div>
         </b-col>
@@ -50,7 +50,7 @@
               รุ่น/ปี
             </div>
             <div>
-              <b-input type="text" v-model="data.carmodel" disabled/>
+              <b-input type="text" v-model="data.carmodel" readonly/>
             </div>
           </div>
         </b-col>
@@ -60,7 +60,7 @@
               ชื่อ-นามสกุลผู้ซื้อ
             </div>
             <div>
-              <b-input type="text" v-model="data.name" disabled/>
+              <b-input type="text" v-model="data.name" readonly/>
             </div>
           </div>
         </b-col>
@@ -70,7 +70,7 @@
               บ้านเลขที่
             </div>
             <div>
-              <b-input type="text" v-model="data.housenumber" disabled/>
+              <b-input type="text" v-model="data.housenumber" readonly/>
             </div>
           </div>
         </b-col>
@@ -82,7 +82,7 @@
               หมู่บ้าน/อาคาร
             </div>
             <div>
-              <b-input type="text" v-model="data.village" disabled/>
+              <b-input type="text" v-model="data.village" readonly/>
             </div>
           </div>
         </b-col>
@@ -92,7 +92,7 @@
               ซอย
             </div>
             <div>
-              <b-input type="text" v-model="data.alley" disabled/>
+              <b-input type="text" v-model="data.alley" readonly/>
             </div>
           </div>
         </b-col>
@@ -102,7 +102,7 @@
               ถนน
             </div>
             <div>
-              <b-input type="text" v-model="data.road" disabled/>
+              <b-input type="text" v-model="data.road" readonly/>
             </div>
           </div>
         </b-col>
@@ -114,7 +114,7 @@
               แขวง/ตำบล
             </div>
             <div>
-              <b-input type="text" v-model="data.subdistrict" disabled/>
+              <b-input type="text" v-model="data.subdistrict" readonly/>
             </div>
           </div>
         </b-col>
@@ -124,7 +124,7 @@
               เขต/อำเภอ
             </div>
             <div>
-              <b-input type="text" v-model="data.district" disabled/>
+              <b-input type="text" v-model="data.district" readonly/>
             </div>
           </div>
         </b-col>
@@ -134,7 +134,7 @@
               จังหวัด
             </div>
             <div>
-              <b-input type="text" v-model="data.province" disabled/>
+              <b-input type="text" v-model="data.province" readonly/>
             </div>
           </div>
         </b-col>
@@ -146,7 +146,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.zipcode" disabled/>
+              <b-input type="text" v-model="data.zipcode" readonly/>
             </div>
           </div>
         </b-col>
@@ -156,7 +156,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.telephonenumber" disabled/>
+              <b-input type="text" v-model="data.telephonenumber" readonly/>
             </div>
           </div>
         </b-col>
@@ -166,7 +166,7 @@
               ชื่อร้าน/ศูนย์ติดตั้งโช้ค
             </div>
             <div>
-              <b-input type="text" v-model="data.namestaller" disabled/>
+              <b-input type="text" v-model="data.namestaller" readonly/>
             </div>
           </div>
         </b-col>
@@ -178,7 +178,7 @@
               ติดตั้งวันที่
             </div>
             <div>
-              <b-input type="text" v-model="data.installerdate" disabled/>
+              <b-input type="text" v-model="data.installerdate" readonly/>
             </div>
           </div>
         </b-col>
@@ -188,7 +188,7 @@
               เบอร์โทร
             </div>
             <div>
-              <b-input type="text" v-model="data.installtelephone" disabled/>
+              <b-input type="text" v-model="data.installertelephone" readonly/>
             </div>
           </div>
         </b-col>
@@ -198,7 +198,7 @@
               ที่อยู่
             </div>
             <div>
-              <b-input type="text" v-model="data.installeraddress" disabled/>
+              <b-input type="text" v-model="data.installeraddress" readonly/>
             </div>
           </div>
         </b-col>
@@ -210,7 +210,7 @@
               รหัสไปรษณีย์
             </div>
             <div>
-              <b-input type="text" v-model="data.zipcodeinstaller" disabled/>
+              <b-input type="text" v-model="data.zipcodeinstaller" readonly/>
             </div>
           </div>
         </b-col>
@@ -220,7 +220,7 @@
               หมายเลขกิโลที่เริ่มติดตั้ง
             </div>
             <div>
-              <b-input type="text" v-model="data.startofinstall" disabled/>
+              <b-input type="text" v-model="data.startofinstall" readonly/>
             </div>
           </div>
         </b-col>
@@ -266,7 +266,7 @@ import axios from 'axios'
           telephonenumber: '',
           namestaller: '',
           installerdate: '',
-          installtelephone: '',
+          installertelephone: '',
           installeraddress: '',
           zipcodeinstaller: '',
           startofinstall: '',
@@ -279,6 +279,13 @@ import axios from 'axios'
         ]
       }
     },
+    mounted () {
+      console.log('mounted', this.$route.params.id)
+      axios.get('http://192.168.1.42:4000/information1').then((res) => {
+          console.log('show data', res)
+          this.data = res.data.result[0]
+        })
+    },
     methods: {
       sendData() {
         console.log('Showdata', this.data)
@@ -290,3 +297,12 @@ import axios from 'axios'
     }
   }
 </script>
+<style scoped>
+input[type="text"] {
+border: none;
+border-bottom: 1px solid;
+border-radius: 0;
+/* float: right; */
+display: inline-block;
+}
+</style>
