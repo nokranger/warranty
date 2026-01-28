@@ -1,11 +1,15 @@
 <template>
   <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/dashboard">Dashboard</router-link> |
-      <router-link to="/report">report</router-link>
-    </nav>
-    <router-view/>
+    <header class="app-header">
+      <h1>Inspection System</h1>
+      <p class="subtitle">ระบบตรวจสอบและสแกนลาเบล</p>
+    </header>
+    <main class="app-content">
+      <router-view />
+    </main>
+    <!-- <footer class="app-footer">
+      <p>&copy; 2024 Inspection System</p>
+    </footer> -->
   </div>
 </template>
 
