@@ -104,7 +104,7 @@ export default {
       this.error = null
       try {
         // ใช้ encodeURIComponent เพื่อป้องกันปัญหา special characters
-        const response = await axios.get(`http://localhost:3000/api/work-orders/${encodeURIComponent(searchCode)}`)
+        const response = await axios.get(process.env.VUE_APP_API_BASE_URL + `/work-orders/${encodeURIComponent(searchCode)}`)
         this.workOrder = response.data
       } catch (error) {
         console.error('Search error:', error)
@@ -171,7 +171,7 @@ export default {
       // หา Ordered Qty (97) - อยู่หลัง 70000
       // รูปแบบ: 70000 + 00000000 + 97 + 00000
       const qtyMatch = rawString.match(/70000(\d{8})(\d{2,3})(\d{5})/);
-      console.log('result.snp_quantity=====', qtyMatch )
+      console.log('result.snp_quantity=====', qtyMatch)
       if (qtyMatch) {
         result.order_quantity = qtyMatch[1] + qtyMatch[2]
         result.order_quantity = parseInt(result.order_quantity);
@@ -227,12 +227,15 @@ export default {
       result.fromProcess = 'STORE 24 HR.';
       result.toProcess = 'PACKING';
 
-      result.outerbox_qty = result.order_quantity / result.snp_quantity,
-
-        result.outerbox_qty = Math.floor(result.outerbox_qty)
+      if (result.snp_quantity <= 1 || result.snp_quantity <= '1') {
+        result.outerbox_qty = 0
+      } else {
+        result.outerbox_qty = result.order_quantity / result.snp_quantity,
+          result.outerbox_qty = Math.floor(result.outerbox_qty)
+      }
       console.log('parseLine=========', result)
-      // const response = await axios.post('http://localhost:3000/api/work-orders/scanworkorder', result);
-      // this.searchWorkOrder(rawString)
+      const response = await axios.post(process.env.VUE_APP_API_BASE_URL + '/work-orders/scanworkorder', result);
+      this.searchWorkOrder(rawString)
       // if (response.data.success) {
       //     this.message = 'บันทึกข้อมูลสำเร็จ!';
       //     this.$toast.success('Work Order saved successfully!');

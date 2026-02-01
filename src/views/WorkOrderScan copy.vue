@@ -104,7 +104,7 @@ export default {
       this.error = null
       try {
         // ใช้ encodeURIComponent เพื่อป้องกันปัญหา special characters
-        const response = await axios.get(`http://localhost:3000/api/work-orders/${encodeURIComponent(searchCode)}`)
+        const response = await axios.get(process.env.VUE_APP_API_BASE_URL + `/${encodeURIComponent(searchCode)}`)
         this.workOrder = response.data
       } catch (error) {
         console.error('Search error:', error)

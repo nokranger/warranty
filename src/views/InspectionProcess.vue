@@ -33,37 +33,10 @@
           <p class="scan-type">{{ getScanType() }}</p>
         </div>
 
-        <!-- <div class="progress-display">
-          <div class="progress-item">
-            <label>Scan:</label>
-            <span class="progress-value">{{ getCurrentScanned() }}</span>
-          </div>
-          <div class="progress-item">
-            <label>Target:</label>
-            <span class="progress-value">{{ getTargetCount() }}</span>
-          </div>
-          <div class="progress-item">
-            <label>SNP:</label>
-            <span class="progress-value">{{ workOrder?.snp_quantity || 0 }}</span>
-          </div>
-
-
-          <div class="progress-item highlight-box">
-            <label>กล่องนอกที่สแกนแล้ว:</label>
-            <span class="progress-value highlight">{{ progress.outerBox }}</span>
-          </div>
-
-          <div class="progress-item highlight-box" v-if="progress.outerBox > 0">
-            <label>รอบที่:</label>
-            <span class="progress-value highlight">{{ Math.floor(progress.product / workOrder.snp_quantity) + 1
-            }}</span>
-          </div>
-        </div> -->
-
         <div class="progress-display">
           <div class="progress-item">
             <label>QR Scan:</label>
-            <span class="progress-value">{{ progress.product}} /  {{ workOrder.order_quantity}}</span>
+            <span class="progress-value">{{ progress.product }} / {{ workOrder.order_quantity }}</span>
           </div>
           <!-- <div class="progress-item">
             <label>Target:</label>
@@ -71,13 +44,13 @@
           </div> -->
           <div class="progress-item">
             <label>Inner Box Scan:</label>
-            <span class="progress-value">{{ progress.innerBox }} /  {{ workOrder.order_quantity}}</span>
+            <span class="progress-value">{{ progress.innerBox }} / {{ workOrder.order_quantity }}</span>
           </div>
 
           <!-- เพิ่มส่วนนี้เพื่อแสดงจำนวนกล่องนอก -->
           <div class="progress-item highlight-box">
             <label>Outer Box Scan:</label>
-            <span class="progress-value highlight">{{ progress.outerBox }} / {{ workOrder.snp_quantity}}</span>
+            <span class="progress-value highlight">{{ progress.outerBox }} / {{ workOrder.outer_box }}</span>
           </div>
 
           <!-- เพิ่มส่วนนี้เพื่อแสดงรอบที่กำลังทำ -->
@@ -88,34 +61,19 @@
           </div>
         </div>
 
-        <!-- <div class="global-summary">
-          <h4>สรุปการสแกนทั้งหมด</h4>
-          <div class="summary-row">
-            <div class="summary-item">
-              <label>ชิ้นงาน (QR):</label>
-              <span class="summary-value">{{ progress.product }}</span>
-            </div>
-            <div class="summary-item">
-              <label>กล่องใน:</label>
-              <span class="summary-value">{{ progress.innerBox }}</span>
-            </div>
-            <div class="summary-item">
-              <label>กล่องนอก:</label>
-              <span class="summary-value">{{ progress.outerBox }}</span>
-            </div>
-          </div>
-        </div> -->
-
         <div class="scanner-input">
           <qrcode-stream v-if="showScanner && (currentStep === 1 || currentStep === 4)" @decode="onDecode"
             @init="onInit" />
-          <input v-else v-model="scanInput" type="text" :placeholder="getInputPlaceholder()" @keyup.enter="processScan"
+          <input v-else v-model="scanInput" type="text" :placeholder="getInputPlaceholder()"
+            @keyup.enter="processScan(progress.product, progress.innerBox, progress.outerBox, workOrder.order_quantity, workOrder.outer_box)"
             ref="scanInput" class="scan-input-field" autofocus />
         </div>
 
         <div class="scan-actions">
-          <button @click="processScan" class="btn-scan">สแกน</button>
-          <button @click="resetProcess" class="btn-reset">เริ่มใหม่</button>
+          <button
+            @click="processScan(progress.product, progress.innerBox, progress.outerBox, workOrder.order_quantity, workOrder.outer_box)"
+            class="btn-scan">สแกน</button>
+          <button @click="resetProcess" class="btn-reset">เซฟงาน</button>
           <button @click="showEmergencyFinishModal" class="btn-reset">จบงานฉุกเฉิน</button>
         </div>
       </div>
@@ -160,8 +118,6 @@
           </div>
         </div>
       </div>
-
-
 
       <!-- Error Modal -->
       <div v-if="showErrorModal" class="modal-overlay" @click="closeErrorModal">
@@ -246,77 +202,86 @@ export default {
   methods: {
     async loadWorkOrder() {
       try {
-        const response = await axios.get(`/api/work-orders/by-id/${this.workOrderId}`)
+        const response = await axios.get(process.env.VUE_APP_API_BASE_URL + `/work-orders/by-id/${this.workOrderId}`)
         this.workOrder = response.data
+        console.log('workordwer========', this.workOrder)
       } catch (error) {
         console.error('Error loading work order:', error)
       }
     },
 
-    async loadProgress() {
+    async loadProgress(p1, p2, p3, w1, w2) {
       try {
-        const response = await axios.get(`/api/work-orders/${this.workOrderId}/progress`)
+        const response = await axios.get(process.env.VUE_APP_API_BASE_URL + `/work-orders/${this.workOrderId}/progress`)
         this.progress = response.data.progress
         this.updateCurrentStep()
       } catch (error) {
         console.error('Error loading progress:', error)
       }
+      // await this.checkWorkOrder(p1,p2,p3,w1,w2)
     },
 
-    async processScan() {
-      if (!this.scanInput.trim()) return
+    // async processScan(progress) {
+    //   if (!this.scanInput.trim()) return
 
-      try {
-        let endpoint = ''
-        switch (this.currentStep) {
-          case 1:
-          case 4:
-            endpoint = '/api/scan/product'
-            break
-          case 2:
-            endpoint = '/api/scan/inner-box'
-            break
-          case 3:
-            endpoint = '/api/scan/outer-box'
-            break
-        }
+    //   try {
+    //     let endpoint = ''
+    //     switch (this.currentStep) {
+    //       case 1:
+    //       case 4:
+    //         endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/product'
+    //         break
+    //       case 2:
+    //         endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/inner-box'
+    //         break
+    //       case 3:
+    //         endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/outer-box'
+    //         break
+    //     }
 
-        const response = await axios.post(endpoint, {
-          workOrderId: this.workOrderId,
-          labelCode: this.scanInput,
-          userCode: this.userCode
-        })
+    //     const response = await axios.post(endpoint, {
+    //       workOrderId: this.workOrderId,
+    //       labelCode: this.scanInput,
+    //       userCode: this.userCode
+    //     })
 
-        if (response.data.success) {
-          this.successMessage = `สแกนสำเร็จ! (${response.data.scanned || 1})`
-          this.showSuccessModal = true
-          await this.loadProgress()
-        }
+    //     if (response.data.success) {
+    //       //this.successMessage = `สแกนสำเร็จ! (${response.data.scanned || 1})`
+    //       //this.showSuccessModal = true
+    //       await this.loadProgress()
+    //       await this.checkWorkOrder(progress)
+    //     }
 
-        this.scanInput = ''
-        this.userCode = ''
+    //     this.scanInput = ''
+    //     this.userCode = ''
 
-      } catch (error) {
-        this.errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด'
-        this.requireUserCode = error.response?.data?.requireUserCode || false
-        this.showErrorModal = true
-      }
-    },
+    //   } catch (error) {
+    //     this.errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด'
+    //     this.requireUserCode = error.response?.data?.requireUserCode || false
+    //     this.showErrorModal = true
+    //   }
+    // },
     updateCurrentStep() {
-      if (this.progress.product < this.workOrder.snp_quantity) {
-        this.currentStep = 1
-        this.currentRoundScans.product = this.progress.product % this.workOrder.snp_quantity
-      } else if (this.progress.innerBox < this.workOrder.snp_quantity) {
+      const snp = this.workOrder.snp_quantity
+      // คำนวณว่า outer box ครบกี่รอบ (ใช้ เทียบกับ product ที่สแกนไปแล้ว)
+      const completedOuterBoxes = this.progress.outerBox
+      // product ที่คาดว่าต้องสแกนครบถึงรอบนี้ คือ completedOuterBoxes * snp
+      const expectedProduct = completedOuterBoxes * snp
+      // inner box เดียวกัน
+      const expectedInnerBox = completedOuterBoxes * snp
+
+      if (this.progress.product < expectedProduct + snp) {
+        // ยังสแกน QR ไม่ครบ snp ของรอบปัจจุบัน
+        this.currentStep = (completedOuterBoxes === 0) ? 1 : 4
+        this.currentRoundScans.product = this.progress.product - expectedProduct
+      } else if (this.progress.innerBox < expectedInnerBox + snp) {
+        // QR ครบ แต่ inner box ยังไม่ครบ
         this.currentStep = 2
-        this.currentRoundScans.innerBox = this.progress.innerBox % this.workOrder.snp_quantity
-      } else if (this.progress.outerBox === 0) {
+        this.currentRoundScans.innerBox = this.progress.innerBox - expectedInnerBox
+      } else {
+        // inner box ครบ ไปสแกน outer box
         this.currentStep = 3
         this.currentRoundScans.outerBox = 0
-      } else {
-        this.currentStep = 4
-        // คำนวณรอบใหม่
-        const completedRounds = Math.floor(this.progress.product / this.workOrder.snp_quantity)
-        this.currentRoundScans.product = this.progress.product - (completedRounds * this.workOrder.snp_quantity)
       }
     },
     getScanInstruction() {
@@ -391,7 +356,7 @@ export default {
       this.scanInput = result
       await this.processScan()
     },
-    async processScan() {
+    async processScan(p1, p2, p3, w1, w2) {
       if (!this.scanInput.trim()) return
 
       try {
@@ -399,20 +364,20 @@ export default {
         switch (this.currentStep) {
           case 1:
           case 4:
-            endpoint = '/api/scan/product'
+            endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/product'
             break
           case 2:
-            endpoint = '/api/scan/inner-box'
+            endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/inner-box'
             break
           case 3:
-            endpoint = '/api/scan/outer-box'
+            endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/outer-box'
             break
         }
-
+        const user = JSON.parse(localStorage.getItem('user'))
         const response = await axios.post(endpoint, {
           workOrderId: this.workOrderId,
           labelCode: this.scanInput,
-          userCode: this.userCode
+          user_id: user.id
         })
 
         if (response.data.success) {
@@ -427,11 +392,23 @@ export default {
             this.currentRoundScans.outerBox++
             this.progress.outerBox++
           }
+          // console.log('สแกนกล่องครบแล้ว',this.progress.outerBox +' ' + this.progress.innerBox)
+          if (this.progress.outerBox >= this.workOrder.outer_box && this.progress.innerBox >= this.workOrder.order_quantity) {
+            console.log('สแกนกล่องครบแล้ว', this.progress.outerBox + ' ' + this.progress.innerBox)
+            this.successMessage = `สำเร็จ! สแกนกล่องนอกครบ ${this.progress.outerBox}/${this.workOrder.outer_box}`
+            this.showSuccessModal = true
+            this._workOrderCompleted = true
+            this.scanInput = ''
+            this.userCode = ''
+            this.$router.push('/');
+            return  // หยุดเลย ไม่ต้อง loadProgress แล้ว
+          }
 
-          this.successMessage = `สแกนสำเร็จ! (${response.data.scanned || 1}/${this.getTargetCount()})`
-          this.showSuccessModal = true
+          //this.successMessage = `สแกนสำเร็จ! (${response.data.scanned || 1}/${this.getTargetCount()})`
+          //this.showSuccessModal = true
 
           // รีเฟรชข้อมูลจาก server
+          // await this.checkWorkOrder(p1,p2,p3,w1,w2)
           await this.loadProgress()
         }
 
@@ -527,7 +504,9 @@ export default {
         this.$refs.emergencyReasonInput.focus()
       }
     },
-
+    checkWorkOrder(p1, p2, p3, w1, w2) {
+      console.log('progress======', p1, p2, p3, w1, w2)
+    },
     async confirmEmergencyFinish() {
       // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
       if (!this.emergencyUserCode.trim()) {
@@ -546,8 +525,8 @@ export default {
       }
 
       try {
-        const response = await axios.post(
-          `/api/work-orders/${this.workOrderId}/emergency-finish`,
+        const response = await axios.post(process.env.VUE_APP_API_BASE_URL +
+          `/work-orders/${this.workOrderId}/emergency-finish`,
           {
             userCode: this.emergencyUserCode,
             reason: this.emergencyReason,
@@ -595,7 +574,7 @@ export default {
 </script>
 
 <style scoped>
-  .btn-emergency {
+.btn-emergency {
   background: #ff9800;
   color: white;
   flex: 1;
@@ -740,11 +719,11 @@ export default {
     min-width: 90%;
     margin: 1rem;
   }
-  
+
   .scan-actions {
     flex-direction: column;
   }
-  
+
   .btn-emergency {
     width: 100%;
   }

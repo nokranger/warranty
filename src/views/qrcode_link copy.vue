@@ -167,7 +167,7 @@ export default {
       linkedWarrantyCode: '',
       loading: false,
       errorMessage: '',
-      apiBaseURL: 'http://localhost:4000/api' // เปลี่ยนตาม URL ของคุณ
+      apiBaseURL: process.env.VUE_APP_API_BASE_URL// เปลี่ยนตาม URL ของคุณ
     }
   },
   methods: {
