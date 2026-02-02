@@ -122,7 +122,7 @@ export default {
     },
     async parseWorkOrderLabel(rawString) {
       // ตัวอย่าง: "L0501BA1HU3060286=G             70000000000009700000BA1FIG-030                U3813                    13023936  2025111820251118000000000400000SHOCK  ABSORBER  FR                                    *"
-
+      const user = JSON.parse(localStorage.getItem('user'))
       const result = {
         work_order_code: rawString,
         item_id: '',
@@ -140,7 +140,8 @@ export default {
         toProcess: '',
         subInventory: '',
         oderDate: '',
-        outerbox_qty: ''
+        outerbox_qty: '',
+        user_id: user.id
       };
 
       // วิเคราะห์โครงสร้างจากตัวอย่าง

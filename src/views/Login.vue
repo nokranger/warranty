@@ -107,7 +107,7 @@ export default {
 
       try {
         // ส่งข้อมูล login ไปยัง API
-        const response = await axios.post('/api/login', {
+        const response = await axios.post(process.env.VUE_APP_API_BASE_URL + '/login', {
           username: this.form.username,
           password: this.form.password
         });
@@ -133,7 +133,7 @@ export default {
         if (error.response) {
             // console.log('loginuser', response)
           // Server ตอบกลับมาด้วย status code ที่ไม่ใช่ 2xx
-          this.errorMessage = error.response.data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้องaaa';
+          this.errorMessage = error.response.data.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
         } else if (error.request) {
           // Request ถูกส่งไปแล้วแต่ไม่ได้รับ response
           this.errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';

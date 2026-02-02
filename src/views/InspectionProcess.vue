@@ -30,7 +30,7 @@
       <div class="scan-area">
         <div class="scan-instruction">
           <h3>{{ getScanInstruction() }}</h3>
-          <p class="scan-type">{{ getScanType() }}</p>
+          <!-- <p class="scan-type">{{ getScanType() }}</p> -->
         </div>
 
         <div class="progress-display">
@@ -48,7 +48,7 @@
           </div>
 
           <!-- เพิ่มส่วนนี้เพื่อแสดงจำนวนกล่องนอก -->
-          <div class="progress-item highlight-box">
+          <div class="progress-item highlight-box" v-if="workOrder.outer_box > 0">
             <label>Outer Box Scan:</label>
             <span class="progress-value highlight">{{ progress.outerBox }} / {{ workOrder.outer_box }}</span>
           </div>
@@ -179,7 +179,6 @@ export default {
         innerBox: 0,
         outerBox: 0
       },
-      // เพิ่มตัวนับการสแกนในรอบปัจจุบัน
       currentRoundScans: {
         product: 0,
         innerBox: 0,
@@ -218,86 +217,98 @@ export default {
       } catch (error) {
         console.error('Error loading progress:', error)
       }
-      // await this.checkWorkOrder(p1,p2,p3,w1,w2)
     },
 
-    // async processScan(progress) {
-    //   if (!this.scanInput.trim()) return
-
-    //   try {
-    //     let endpoint = ''
-    //     switch (this.currentStep) {
-    //       case 1:
-    //       case 4:
-    //         endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/product'
-    //         break
-    //       case 2:
-    //         endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/inner-box'
-    //         break
-    //       case 3:
-    //         endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/outer-box'
-    //         break
-    //     }
-
-    //     const response = await axios.post(endpoint, {
-    //       workOrderId: this.workOrderId,
-    //       labelCode: this.scanInput,
-    //       userCode: this.userCode
-    //     })
-
-    //     if (response.data.success) {
-    //       //this.successMessage = `สแกนสำเร็จ! (${response.data.scanned || 1})`
-    //       //this.showSuccessModal = true
-    //       await this.loadProgress()
-    //       await this.checkWorkOrder(progress)
-    //     }
-
-    //     this.scanInput = ''
-    //     this.userCode = ''
-
-    //   } catch (error) {
-    //     this.errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด'
-    //     this.requireUserCode = error.response?.data?.requireUserCode || false
-    //     this.showErrorModal = true
-    //   }
-    // },
     updateCurrentStep() {
       const snp = this.workOrder.snp_quantity
-      // คำนวณว่า outer box ครบกี่รอบ (ใช้ เทียบกับ product ที่สแกนไปแล้ว)
-      const completedOuterBoxes = this.progress.outerBox
-      // product ที่คาดว่าต้องสแกนครบถึงรอบนี้ คือ completedOuterBoxes * snp
-      const expectedProduct = completedOuterBoxes * snp
-      // inner box เดียวกัน
-      const expectedInnerBox = completedOuterBoxes * snp
+      const totalQty = this.workOrder.order_quantity
 
-      if (this.progress.product < expectedProduct + snp) {
-        // ยังสแกน QR ไม่ครบ snp ของรอบปัจจุบัน
+      // กรณีไม่มี outer box: วนรอบ QR → Inner Box จนกว่าจะครบ order_quantity
+      if (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0') {
+        // ✅ FIX: ตรวจสอบว่าจบงานหรือยัง
+        if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+          this.currentStep = null // จบงานแล้ว
+          return
+        }
+
+        // คำนวณจำนวนที่ควรสแกนในรอบนี้
+        const currentRoundStart = Math.floor(this.progress.product / snp) * snp
+        const expectedProductInRound = currentRoundStart + snp
+        const expectedInnerInRound = currentRoundStart + snp
+
+        // ยังไม่สแกน QR ครบในรอบนี้
+        if (this.progress.product < expectedProductInRound) {
+          this.currentStep = (this.progress.product === 0) ? 1 : 4
+        }
+        // สแกน QR ครบแล้ว แต่ยังไม่สแกน Inner Box ครบ
+        else if (this.progress.innerBox < expectedInnerInRound) {
+          this.currentStep = 2
+        }
+        // ถ้าทั้งสองครบแล้ว แต่ยังไม่ถึง totalQty → เริ่มรอบใหม่
+        else {
+          this.currentStep = 4
+        }
+        return
+      }
+
+      // ✅ FIX: กรณีมี outer box - ปรับการคำนวณให้รองรับเศษ
+      const completedOuterBoxes = this.progress.outerBox
+
+      // คำนวณจำนวนที่ต้องสแกนตามจำนวน outer box ที่สแกนไปแล้ว + รอบปัจจุบัน
+      const expectedProductForNextOuterBox = Math.min((completedOuterBoxes + 1) * snp, totalQty)
+      const expectedInnerForNextOuterBox = Math.min((completedOuterBoxes + 1) * snp, totalQty)
+
+      // ✅ FIX: ตรวจสอบว่าจบงานหรือยัง (ครบทั้ง product และ inner ตาม order_quantity)
+      const hasOuterBox = this.workOrder.outer_box > 0
+      const outerComplete = !hasOuterBox || this.progress.outerBox >= this.workOrder.outer_box
+
+      if (
+        this.progress.product >= totalQty &&
+        this.progress.innerBox >= totalQty &&
+        outerComplete
+      ) {
+        this.currentStep = null // จบงานจริงๆ
+        return
+      }
+
+      // กำหนด step ตามความคืบหน้า
+      if (this.progress.product < expectedProductForNextOuterBox) {
         this.currentStep = (completedOuterBoxes === 0) ? 1 : 4
-        this.currentRoundScans.product = this.progress.product - expectedProduct
-      } else if (this.progress.innerBox < expectedInnerBox + snp) {
-        // QR ครบ แต่ inner box ยังไม่ครบ
+      } else if (this.progress.innerBox < expectedInnerForNextOuterBox) {
         this.currentStep = 2
-        this.currentRoundScans.innerBox = this.progress.innerBox - expectedInnerBox
-      } else {
-        // inner box ครบ ไปสแกน outer box
+      } else if (this.progress.outerBox < this.workOrder.outer_box) {
+        // ✅ ยังสแกน outer box ไม่ครบตามที่กำหนด
         this.currentStep = 3
-        this.currentRoundScans.outerBox = 0
+      } else {
+        // ✅ สแกน outer box ครบแล้ว แต่ยังมี product หรือ inner ที่ต้องสแกนต่อ (กรณีมีเศษ)
+        if (this.progress.product < totalQty) {
+          this.currentStep = 4
+        } else if (this.progress.innerBox < totalQty) {
+          this.currentStep = 2
+        } else {
+          this.currentStep = null // จบงานแล้ว
+        }
       }
     },
+
     getScanInstruction() {
+      console.log('progress=====', this.progress.innerBox, this.progress.product)
+      console.log('workOrder=====', this.workOrder.snp_quantity, this.workOrder.outer_box, this.workOrder.order_quantity)
+      console.log('workOrder=====', this.currentStep)
       switch (this.currentStep) {
         case 1:
           return 'สแกน QR Code ของลาเบลที่ติดกับตัวชิ้นงาน'
         case 2:
           return 'สแกน Bar Code ของลาเบลกล่องใน'
         case 3:
-          return 'สแกน Bar Code ของลาเบลกล่องนอก'
+          return this.workOrder.outer_box === '0' ? '' : 'สแกน Bar Code ของลาเบลกล่องนอก'
         case 4:
-          return ''
+          return 'สแกน QR Code ของลาเบลที่ติดกับตัวชิ้นงาน (รอบถัดไป)'
         default:
           return ''
       }
     },
+
     getScanType() {
       switch (this.currentStep) {
         case 1:
@@ -310,6 +321,7 @@ export default {
           return ''
       }
     },
+
     getCurrentScanned() {
       switch (this.currentStep) {
         case 1:
@@ -324,12 +336,34 @@ export default {
           return 0
       }
     },
+
     getTargetCount() {
+      // ✅ FIX: คำนวณ target ให้ถูกต้องตามรอบและเศษ
       if (this.currentStep === 3) {
         return 1
       }
-      return this.workOrder?.snp_quantity || 0
+
+      const snp = this.workOrder?.snp_quantity || 0
+      const totalQty = this.workOrder?.order_quantity || 0
+      const hasOuterBox = this.workOrder?.outer_box > 0
+
+      if (!hasOuterBox) {
+        // ไม่มี outer box: คำนวณจากรอบปัจจุบัน
+        const currentRoundStart = Math.floor(this.progress.product / snp) * snp
+        const remaining = totalQty - currentRoundStart
+        return Math.min(snp, remaining)
+      } else {
+        // มี outer box: คำนวณจากจำนวนที่เหลือในรอบปัจจุบัน
+        const completedOuterBoxes = this.progress.outerBox
+        const expectedInRound = Math.min((completedOuterBoxes + 1) * snp, totalQty)
+        const currentProgress = (this.currentStep === 1 || this.currentStep === 4)
+          ? this.progress.product
+          : this.progress.innerBox
+        const remaining = expectedInRound - currentProgress
+        return Math.min(snp, remaining)
+      }
     },
+
     getInputPlaceholder() {
       switch (this.currentStep) {
         case 1:
@@ -343,6 +377,7 @@ export default {
           return 'สแกนลาเบล'
       }
     },
+
     async onInit(promise) {
       try {
         await promise
@@ -352,15 +387,18 @@ export default {
         this.showScanner = false
       }
     },
+
     async onDecode(result) {
       this.scanInput = result
       await this.processScan()
     },
+
     async processScan(p1, p2, p3, w1, w2) {
       if (!this.scanInput.trim()) return
 
       try {
         let endpoint = ''
+
         switch (this.currentStep) {
           case 1:
           case 4:
@@ -370,9 +408,16 @@ export default {
             endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/inner-box'
             break
           case 3:
+            if (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0') {
+              this.errorMessage = 'งานนี้ไม่ต้องสแกนกล่องนอก'
+              this.showErrorModal = true
+              this.scanInput = ''
+              return
+            }
             endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/outer-box'
             break
         }
+
         const user = JSON.parse(localStorage.getItem('user'))
         const response = await axios.post(endpoint, {
           workOrderId: this.workOrderId,
@@ -392,23 +437,28 @@ export default {
             this.currentRoundScans.outerBox++
             this.progress.outerBox++
           }
-          // console.log('สแกนกล่องครบแล้ว',this.progress.outerBox +' ' + this.progress.innerBox)
-          if (this.progress.outerBox >= this.workOrder.outer_box && this.progress.innerBox >= this.workOrder.order_quantity) {
-            console.log('สแกนกล่องครบแล้ว', this.progress.outerBox + ' ' + this.progress.innerBox)
-            this.successMessage = `สำเร็จ! สแกนกล่องนอกครบ ${this.progress.outerBox}/${this.workOrder.outer_box}`
+
+          // ✅ FIX: ตรวจสอบว่างานเสร็จหรือยัง - ใช้เงื่อนไขที่ชัดเจน
+          const totalQty = this.workOrder.order_quantity
+          const hasOuterBox = Number(this.workOrder.outer_box) > 0
+          const isWorkComplete =
+            this.progress.product >= totalQty &&
+            this.progress.innerBox >= totalQty &&
+            (!hasOuterBox || this.progress.outerBox >= this.workOrder.outer_box)
+          console.log('จบงานแล้วโว้ยPro', isWorkComplete, hasOuterBox)
+          if (isWorkComplete) {
+            this.successMessage = (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0')
+              ? `สำเร็จ! สแกนครบทั้งหมดแล้ว QR: ${this.progress.product}/${totalQty} Inner Box: ${this.progress.innerBox}/${totalQty}`
+              : `สำเร็จ! สแกนครบทั้งหมดแล้ว QR: ${this.progress.product}/${totalQty} Inner Box: ${this.progress.innerBox}/${totalQty} Outer Box: ${this.progress.outerBox}/${this.workOrder.outer_box}`
             this.showSuccessModal = true
             this._workOrderCompleted = true
             this.scanInput = ''
             this.userCode = ''
-            this.$router.push('/');
-            return  // หยุดเลย ไม่ต้อง loadProgress แล้ว
+            // this.$router.push('/');
+            console.log('จบงานแล้วโว้ยPro')
+            return
           }
 
-          //this.successMessage = `สแกนสำเร็จ! (${response.data.scanned || 1}/${this.getTargetCount()})`
-          //this.showSuccessModal = true
-
-          // รีเฟรชข้อมูลจาก server
-          // await this.checkWorkOrder(p1,p2,p3,w1,w2)
           await this.loadProgress()
         }
 
@@ -421,6 +471,7 @@ export default {
         this.showErrorModal = true
       }
     },
+
     closeErrorModal() {
       if (this.requireUserCode && !this.userCode) {
         return
@@ -435,31 +486,57 @@ export default {
         }
       })
     },
+
     handleSuccessClose() {
       this.showSuccessModal = false
       this.successMessage = ''
 
-      // ตรวจสอบว่าครบรอบหรือยัง
+      // ✅ FIX: ปรับการเปลี่ยน step ให้รองรับกรณีมีเศษ
       const target = this.getTargetCount()
       const current = this.getCurrentScanned()
+      const totalQty = this.workOrder.order_quantity
 
       if (current >= target) {
         if (this.currentStep === 1) {
-          // ครบรอบการสแกนชิ้นงาน ไปขั้นตอนถัดไป
           this.currentStep = 2
           this.currentRoundScans.product = 0
         } else if (this.currentStep === 2) {
-          // ครบรอบการสแกนกล่องใน ไปขั้นตอนถัดไป
-          this.currentStep = 3
+          // ตรวจสอบว่ายังต้องสแกน outer box หรือไม่
+          if (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0') {
+            // ไม่มี outer box: ตรวจสอบว่าครบทั้งหมดหรือยัง
+            if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+              // this.$router.push('/')
+              console.log('จบงานแล้วโว้ยไม่มี outer box')
+              return
+            }
+            this.currentStep = 4 // เริ่มรอบใหม่
+          } else {
+            // มี outer box: ตรวจสอบว่ายังต้องสแกน outer box หรือไม่
+            if (this.progress.outerBox < this.workOrder.outer_box) {
+              this.currentStep = 3 // ไปสแกน outer box
+            } else {
+              // สแกน outer box ครบแล้ว แต่อาจยังมีเศษที่ต้องสแกน
+              if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+                // this.$router.push('/')
+                console.log('จบงานแล้วโว้ยสแกน outer box ครบแล้ว')
+                return
+              }
+              this.currentStep = 4 // ไปสแกนเศษที่เหลือ
+            }
+          }
           this.currentRoundScans.innerBox = 0
         } else if (this.currentStep === 3) {
-          // สแกนกล่องนอกเสร็จ กลับไปสแกนชิ้นงานรอบใหม่
+          // หลังสแกน outer box: ตรวจสอบว่าต้องเริ่มรอบใหม่หรือจบงาน
+          if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+            this.$router.push('/')
+            console.log('จบงานแล้วโว้ยหลังสแกน outer box')
+            return
+          }
           this.currentStep = 4
           this.currentRoundScans.product = 0
           this.currentRoundScans.innerBox = 0
           this.currentRoundScans.outerBox = 0
         } else if (this.currentStep === 4) {
-          // ครบรอบการสแกนชิ้นงานรอบใหม่ ไปสแกนกล่องใน
           this.currentStep = 2
           this.currentRoundScans.product = 0
         }
@@ -471,16 +548,19 @@ export default {
         }
       })
     },
+
     resetProcess() {
       if (confirm('ต้องการเริ่มกระบวนการใหม่?')) {
         this.$router.push('/')
       }
     },
+
     EmergencyFinish() {
       if (confirm('ต้องการจบงานฉุกเฉินกรุณากรอกเหตุผล?')) {
         this.$router.push('/')
       }
     },
+
     showEmergencyFinishModal() {
       this.showEmergencyModal = true
       this.emergencyReason = ''
@@ -504,11 +584,12 @@ export default {
         this.$refs.emergencyReasonInput.focus()
       }
     },
+
     checkWorkOrder(p1, p2, p3, w1, w2) {
       console.log('progress======', p1, p2, p3, w1, w2)
     },
+
     async confirmEmergencyFinish() {
-      // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
       if (!this.emergencyUserCode.trim()) {
         alert('กรุณากรอกรหัสผู้ใช้')
         return
@@ -519,7 +600,6 @@ export default {
         return
       }
 
-      // ยืนยันอีกครั้ง
       if (!confirm('ยืนยันการจบงานฉุกเฉิน?\nการกระทำนี้ไม่สามารถย้อนกลับได้')) {
         return
       }
@@ -540,7 +620,6 @@ export default {
             `กล่องในที่สแกน: ${response.data.data.innerBoxScanned}\n` +
             `กล่องนอกที่สแกน: ${response.data.data.outerBoxScanned}`)
 
-          // กลับไปหน้าแรก
           this.$router.push('/')
         }
       } catch (error) {
@@ -567,7 +646,7 @@ export default {
     progressPercentage() {
       const target = this.getTargetCount()
       const current = this.getCurrentScanned()
-      return Math.round((current / target) * 100)
+      return target > 0 ? Math.round((current / target) * 100) : 0
     }
   }
 }

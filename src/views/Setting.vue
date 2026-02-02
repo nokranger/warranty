@@ -61,11 +61,17 @@
           <b-button :id="index" style="margin-top: -2px;" variant="success"
             v-on:click="updateUser(users)">อัพเดตข้อมูล</b-button>
         </div>
+        <div>
+          <br>
+          <b-button :id="index" style="margin-top: -2px;" variant="danger"
+            v-on:click="updatePassword(users)">เปลี่ยนรหัสผ่าน</b-button>
+        </div>
         <!-- <b-button :id="index" style="margin-top: -2px;" variant="success" v-on:click="updateUser(users.id, users.password, users.fullname, users.email, users.role, users.department, users.active)">อัพเดตข้อมูล</b-button> -->
 
       </div>
     </div>
-    <!-- <b-button v-on:click="reload()">reload</b-button> -->
+    <!-- <b-button v-on:click="reload()" style="margin: 5px;">Summerize</b-button> -->
+    <b-button v-on:click="summerize()" style="margin: 5px;">Summerize</b-button>
   </div>
 </template>
 <script>
@@ -98,6 +104,16 @@ export default {
         this.user = response.data.result
         console.log('user=====', this.user)
       })
+    },
+    updatePassword(users) {
+      console.log('users=======', users)
+      axios.post(process.env.VUE_APP_API_BASE_URL + `/updatepassword`, users).then(response => {
+        // this.user = response.data.result
+        console.log('user=====',  response.data.message)
+      })
+    },
+    summerize() {
+      this.$router.push('/summerize');
     }
   }
 }
