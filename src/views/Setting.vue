@@ -71,7 +71,7 @@
       </div>
     </div>
     <!-- <b-button v-on:click="reload()" style="margin: 5px;">Summerize</b-button> -->
-    <b-button v-on:click="summerize()" style="margin: 5px;">Summerize</b-button>
+    <b-button v-on:click="summerize()" style="margin: 5px;">Summary</b-button>
   </div>
 </template>
 <script>
@@ -113,7 +113,7 @@ export default {
       })
     },
     summerize() {
-      this.$router.push('/summerize');
+      this.$router.push('/summary');
     }
   }
 }

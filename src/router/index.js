@@ -6,7 +6,7 @@ import WorkOrderScan from '../views/WorkOrderScan.vue'
 import InspectionProcess from '../views/InspectionProcess.vue'
 import Login from '../views/Login.vue'
 import Setting from '../views/Setting.vue'
-import Summerize from '../views/Summerize.vue'
+import Summary from '../views/Summary.vue'
 
 Vue.use(VueRouter)
 
@@ -96,9 +96,9 @@ const routes = [
     props: true
   },
   {
-    path: '/summerize',
-    name: 'summerize',
-    component: Summerize,
+    path: '/summary',
+    name: 'summary',
+    component: Summary,
     props: true
   }
 ]

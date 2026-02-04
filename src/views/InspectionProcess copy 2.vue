@@ -13,34 +13,18 @@
       </div>
 
       <div class="step-indicator">
-
-        <!-- STEP 1 : QR -->
-        <div class="step" :class="{
-          active: currentStep === 1 || currentStep === 4,
-          completed: progress.product > 0
-        }">
+        <div class="step" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
           <div class="step-number">1</div>
           <div class="step-label">สแกน QR</div>
         </div>
-
-        <!-- STEP 2 : INNER -->
-        <div class="step" :class="{
-          active: currentStep === 2,
-          completed: progress.innerBox > 0
-        }">
+        <div class="step" :class="{ active: currentStep === 2, completed: currentStep > 2 }">
           <div class="step-number">2</div>
           <div class="step-label">สแกนกล่องใน</div>
         </div>
-
-        <!-- STEP 3 : OUTER -->
-        <div class="step" :class="{
-          active: currentStep === 3,
-          completed: progress.outerBox > 0
-        }">
+        <div class="step" :class="{ active: currentStep === 3, completed: currentStep > 3 }">
           <div class="step-number">3</div>
           <div class="step-label">สแกนกล่องนอก</div>
         </div>
-
       </div>
 
       <div class="scan-area">
@@ -91,32 +75,6 @@
           <button @click="resetProcess" class="btn-reset">เซฟงาน</button>
           <button @click="showEmergencyFinishModal" class="btn-reset">จบงานฉุกเฉิน</button>
         </div>
-      </div>
-      <!-- Scan Log Table -->
-       <br>
-      <div class="scan-log-panel">
-        <h4>ประวัติการสแกน</h4>
-
-        <table class="scan-log-table">
-          <thead>
-            <tr style="font-weight: bold;">
-              <th>#</th>
-              <th>ประเภท</th>
-              <th>รอบ</th>
-              <th>โค้ด</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(log, index) in scanLogs.slice().reverse()" :key="index">
-              <td>{{ scanLogs.length - index }}</td>
-              <td>
-                <span :class="'tag ' + log.type">{{ log.type }}</span>
-              </td>
-              <td>{{ log.round }}</td>
-              <td class="code">{{ log.code }}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
 
       <div v-if="showEmergencyModal" class="modal-overlay" @click="closeEmergencyModal">
@@ -190,7 +148,7 @@
             <p>{{ successMessage }}</p>
           </div>
           <div class="modal-footer">
-            <button @click="goToHome" class="btn-success">ตกลง</button>
+            <button @click="handleSuccessClose" class="btn-success">ตกลง</button>
           </div>
         </div>
       </div>
@@ -232,8 +190,7 @@ export default {
       requireUserCode: false,
       showEmergencyModal: false,
       emergencyReason: '',
-      emergencyUserCode: '',
-      scanLogs: [] 
+      emergencyUserCode: ''
     }
   },
   async mounted() {
@@ -255,209 +212,92 @@ export default {
       try {
         const response = await axios.get(process.env.VUE_APP_API_BASE_URL + `/work-orders/${this.workOrderId}/progress`)
         this.progress = response.data.progress
-        // this.updateCurrentStep()
+        this.updateCurrentStep()
       } catch (error) {
         console.error('Error loading progress:', error)
       }
     },
-    async processScan() {
-      if (!this.scanInput.trim()) return
 
-      try {
-        const snp = Number(this.workOrder.snp_quantity)
-        const totalQty = Number(this.workOrder.order_quantity)
-        const outerLimit = Number(this.workOrder.outer_box)
+    updateCurrentStep() {
+      const snp = this.workOrder.snp_quantity
+      const totalQty = this.workOrder.order_quantity
 
-        const product = this.progress.product
-        const inner = this.progress.innerBox
-        const outer = this.progress.outerBox
-
-        let endpoint = ''
-        let nextStep = this.currentStep
-
-        /* =====================
-         * 1) ตัดสินใจว่าจะ scan อะไร
-         * ===================== */
-
-        // ===== CASE A: snp = 1 หรือไม่มี outer =====
-        if (snp === 1 || outerLimit === 0) {
-          if (product < totalQty) {
-            nextStep = product === 0 ? 1 : 4
-            endpoint = '/scan/product'
-          }
-          else if (inner < totalQty) {
-            nextStep = 2
-            endpoint = '/scan/inner-box'
-          }
-        }
-
-        // ===== CASE B: snp > 1 =====
-        else {
-          const completedRounds = outer
-          const roundTarget = Math.min(
-            (completedRounds + 1) * snp,
-            totalQty
-          )
-
-          if (product < roundTarget) {
-            nextStep = product === 0 ? 1 : 4
-            endpoint = '/scan/product'
-          }
-          else if (inner < roundTarget) {
-            nextStep = 2
-            endpoint = '/scan/inner-box'
-          }
-          else if (
-            outer < outerLimit &&
-            roundTarget % snp === 0
-          ) {
-            nextStep = 3
-            endpoint = '/scan/outer-box'
-          }
-          else if (product < totalQty) {
-            nextStep = 4
-            endpoint = '/scan/product'
-          }
-          else if (inner < totalQty) {
-            nextStep = 2
-            endpoint = '/scan/inner-box'
-          }
-        }
-
-        if (!endpoint) return
-
-        /* =====================
-         * 2) ยิง API ก่อน (สำคัญ!)
-         * ===================== */
-        const user = JSON.parse(localStorage.getItem('user'))
-
-        const response = await axios.post(
-          process.env.VUE_APP_API_BASE_URL + endpoint,
-          {
-            workOrderId: this.workOrderId,
-            labelCode: this.scanInput,
-            user_id: user.id
-          }
-        )
-
-        if (response.data.success) {
-          let type = ''
-          if (endpoint.includes('product')) {
-            this.progress.product++
-            type = 'product'
-          }
-          if (endpoint.includes('inner')) {
-            this.progress.innerBox++
-            type = 'inner'
-          }
-          if (endpoint.includes('outer')) {
-            this.progress.outerBox++
-            type = 'outer'
-          }
-          this.scanLogs.push({
-            workOrderId: this.workOrderId,
-            type,
-            code: this.scanInput,
-            round: Math.floor(this.progress.product / this.workOrder.snp_quantity) + 1,
-            userId: user.id,
-            timestamp: new Date().toISOString()
-          })
-        }
-
-        /* =====================
-         * คิด step ใหม่จากค่าหลังสแกน
-         * ===================== */
-        this.currentStep = this.decideNextStep(
-          this.progress.product,
-          this.progress.innerBox,
-          this.progress.outerBox
-        )
-        this.scanInput = ''
-
-        /* =====================
-         * 3) ตรวจจบงาน "หลังยิง API"
-         * ===================== */
-        if (
-          this.progress.product >= totalQty &&
-          this.progress.innerBox >= totalQty &&
-          (outerLimit === 0 || this.progress.outerBox >= outerLimit)
-        ) {
-          this.finishWorkOrder()
+      // กรณีไม่มี outer box: วนรอบ QR → Inner Box จนกว่าจะครบ order_quantity
+      if (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0') {
+        // ✅ FIX: ตรวจสอบว่าจบงานหรือยัง
+        if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+          this.currentStep = null // จบงานแล้ว
           return
         }
 
-        await this.loadProgress()
+        // คำนวณจำนวนที่ควรสแกนในรอบนี้
+        const currentRoundStart = Math.floor(this.progress.product / snp) * snp
 
-      } catch (error) {
-        this.errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด'
-        this.requireUserCode = error.response?.data?.requireUserCode || false
-        this.showErrorModal = true
+        const expectedProductInRound = Math.min(
+          currentRoundStart + snp,
+          totalQty
+        )
+
+        const expectedInnerInRound = Math.min(
+          currentRoundStart + snp,
+          totalQty
+        )
+
+        // ยังไม่สแกน QR ครบในรอบนี้
+        if (this.progress.product < expectedProductInRound) {
+          this.currentStep = this.progress.product === 0 ? 1 : 4
+          return
+        }
+
+        if (this.progress.innerBox < expectedInnerInRound) {
+          this.currentStep = 2
+          return
+        }
+        // รอบนี้จบ → ถ้ายังไม่ครบ total ให้เริ่มรอบใหม่
+        this.currentStep = 4
+        return
+      }
+
+      // ✅ FIX: กรณีมี outer box - ปรับการคำนวณให้รองรับเศษ
+      const completedOuterBoxes = this.progress.outerBox
+
+      // คำนวณจำนวนที่ต้องสแกนตามจำนวน outer box ที่สแกนไปแล้ว + รอบปัจจุบัน
+      const expectedProductForNextOuterBox = Math.min((completedOuterBoxes + 1) * snp, totalQty)
+      const expectedInnerForNextOuterBox = Math.min((completedOuterBoxes + 1) * snp, totalQty)
+
+      // ✅ FIX: ตรวจสอบว่าจบงานหรือยัง (ครบทั้ง product และ inner ตาม order_quantity)
+      const hasOuterBox = this.workOrder.outer_box > 0
+      const outerComplete = !hasOuterBox || this.progress.outerBox >= this.workOrder.outer_box
+
+      if (
+        this.progress.product >= totalQty &&
+        this.progress.innerBox >= totalQty &&
+        outerComplete
+      ) {
+        this.currentStep = null // จบงานจริงๆ
+        return
+      }
+
+      // กำหนด step ตามความคืบหน้า
+      if (this.progress.product < expectedProductForNextOuterBox) {
+        this.currentStep = (completedOuterBoxes === 0) ? 1 : 4
+      } else if (this.progress.innerBox < expectedInnerForNextOuterBox) {
+        this.currentStep = 2
+      } else if (this.progress.outerBox < this.workOrder.outer_box) {
+        // ✅ ยังสแกน outer box ไม่ครบตามที่กำหนด
+        this.currentStep = 3
+      } else {
+        // ✅ สแกน outer box ครบแล้ว แต่ยังมี product หรือ inner ที่ต้องสแกนต่อ (กรณีมีเศษ)
+        if (this.progress.product < totalQty) {
+          this.currentStep = 4
+        } else if (this.progress.innerBox < totalQty) {
+          this.currentStep = 2
+        } else {
+          this.currentStep = null // จบงานแล้ว
+        }
       }
     },
-    decideNextStep(product, inner, outer) {
-      const snp = Number(this.workOrder.snp_quantity)
-      const totalQty = Number(this.workOrder.order_quantity)
-      const outerLimit = Number(this.workOrder.outer_box)
 
-      // ===== ไม่มี outer หรือ snp = 1 =====
-      if (snp === 1 || outerLimit === 0) {
-        if (product < totalQty) return product === 0 ? 1 : 4
-        if (inner < totalQty) return 2
-        return null
-      }
-
-      // ===== มี outer =====
-      const roundTarget = Math.min((outer + 1) * snp, totalQty)
-
-      if (product < roundTarget) return product === 0 ? 1 : 4
-      if (inner < roundTarget) return 2
-      if (outer < outerLimit && roundTarget % snp === 0) return 3
-
-      if (product < totalQty) return 4
-      if (inner < totalQty) return 2
-
-      return null
-    },
-    finishWorkOrder() {
-      this.successMessage = `สำเร็จ!
-      QR: ${this.progress.product}/${this.workOrder.order_quantity}
-      Inner: ${this.progress.innerBox}/${this.workOrder.order_quantity}
-      Outer: ${this.progress.outerBox}/${this.workOrder.outer_box}`
-
-      this.showSuccessModal = true
-      this.currentStep = null
-    },
-    goToHome() {
-      this.showSuccessModal = false
-      this.$router.push('/')   // หรือชื่อ route หน้าแรก
-    },
-    getCurrentScanned() {
-      switch (this.currentStep) {
-        case 1:
-          return this.currentRoundScans.product
-        case 2:
-          return this.currentRoundScans.innerBox
-        case 3:
-          return this.currentRoundScans.outerBox
-        case 4:
-          return this.currentRoundScans.product
-        default:
-          return 0
-      }
-    },
-    getInputPlaceholder() {
-      switch (this.currentStep) {
-        case 1:
-        case 4:
-          return 'สแกน QR Code ชิ้นงาน'
-        case 2:
-          return 'สแกน Barcode กล่องใน'
-        case 3:
-          return 'สแกน Barcode กล่องนอก'
-        default:
-          return 'สแกนลาเบล'
-      }
-    },
     getScanInstruction() {
       console.log('progress=====', this.progress.innerBox, this.progress.product)
       console.log('workOrder=====', this.workOrder.snp_quantity, this.workOrder.outer_box, this.workOrder.order_quantity)
@@ -475,6 +315,76 @@ export default {
           return ''
       }
     },
+
+    getScanType() {
+      switch (this.currentStep) {
+        case 1:
+        case 4:
+          return ''
+        case 2:
+        case 3:
+          return 'Barcode'
+        default:
+          return ''
+      }
+    },
+
+    getCurrentScanned() {
+      switch (this.currentStep) {
+        case 1:
+          return this.currentRoundScans.product
+        case 2:
+          return this.currentRoundScans.innerBox
+        case 3:
+          return this.currentRoundScans.outerBox
+        case 4:
+          return this.currentRoundScans.product
+        default:
+          return 0
+      }
+    },
+
+    getTargetCount() {
+      // ✅ FIX: คำนวณ target ให้ถูกต้องตามรอบและเศษ
+      if (this.currentStep === 3) {
+        return 1
+      }
+
+      const snp = this.workOrder?.snp_quantity || 0
+      const totalQty = this.workOrder?.order_quantity || 0
+      const hasOuterBox = this.workOrder?.outer_box > 0
+
+      if (!hasOuterBox) {
+        // ไม่มี outer box: คำนวณจากรอบปัจจุบัน
+        const currentRoundStart = Math.floor(this.progress.product / snp) * snp
+        const remaining = totalQty - currentRoundStart
+        return Math.min(snp, remaining)
+      } else {
+        // มี outer box: คำนวณจากจำนวนที่เหลือในรอบปัจจุบัน
+        const completedOuterBoxes = this.progress.outerBox
+        const expectedInRound = Math.min((completedOuterBoxes + 1) * snp, totalQty)
+        const currentProgress = (this.currentStep === 1 || this.currentStep === 4)
+          ? this.progress.product
+          : this.progress.innerBox
+        const remaining = expectedInRound - currentProgress
+        return Math.min(snp, remaining)
+      }
+    },
+
+    getInputPlaceholder() {
+      switch (this.currentStep) {
+        case 1:
+        case 4:
+          return 'สแกน QR Code ชิ้นงาน'
+        case 2:
+          return 'สแกน Barcode กล่องใน'
+        case 3:
+          return 'สแกน Barcode กล่องนอก'
+        default:
+          return 'สแกนลาเบล'
+      }
+    },
+
     async onInit(promise) {
       try {
         await promise
@@ -489,6 +399,92 @@ export default {
       this.scanInput = result
       await this.processScan()
     },
+
+    async processScan(p1, p2, p3, w1, w2) {
+      if (!this.scanInput.trim()) return
+
+      try {
+        let endpoint = ''
+
+        switch (this.currentStep) {
+          case 1:
+          case 4:
+            endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/product'
+            break
+          case 2:
+            endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/inner-box'
+            break
+          case 3:
+            if (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0') {
+              this.errorMessage = 'งานนี้ไม่ต้องสแกนกล่องนอก'
+              this.showErrorModal = true
+              this.scanInput = ''
+              return
+            }
+            endpoint = process.env.VUE_APP_API_BASE_URL + '/scan/outer-box'
+            break
+        }
+
+        const user = JSON.parse(localStorage.getItem('user'))
+        const response = await axios.post(endpoint, {
+          workOrderId: this.workOrderId,
+          labelCode: this.scanInput,
+          user_id: user.id
+        })
+
+        if (response.data.success) {
+          // อัพเดทตัวนับทันที
+          if (this.currentStep === 1 || this.currentStep === 4) {
+            this.currentRoundScans.product++
+            this.progress.product++
+          } else if (this.currentStep === 2) {
+            this.currentRoundScans.innerBox++
+            this.progress.innerBox++
+          } else if (this.currentStep === 3) {
+            this.currentRoundScans.outerBox++
+            this.progress.outerBox++
+          }
+
+          // ✅ FIX: ตรวจสอบว่างานเสร็จหรือยัง - ใช้เงื่อนไขที่ชัดเจน
+          const totalQty = this.workOrder.order_quantity
+          const hasOuterBox = Number(this.workOrder.outer_box) > 0
+          const outerLimit = Number(this.workOrder.outer_box)
+          console.log('outerbox', Number(this.workOrder.outer_box), this.progress.product, this.progress.product >= totalQty, totalQty, this.progress.outerBox)
+          const isWorkComplete =
+            this.progress.product >= totalQty &&
+            this.progress.innerBox >= totalQty &&
+            (
+              outerLimit === 0 ||
+              this.progress.outerBox >= outerLimit
+            )
+          console.log('จบงานแล้วโว้ยPro', isWorkComplete, hasOuterBox, this.currentStep)
+          const canCheckComplete = this.currentStep === 2 || this.currentStep === 3
+          if (canCheckComplete && isWorkComplete) {
+            this.successMessage = (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0')
+              ? `สำเร็จ! สแกนครบทั้งหมดแล้ว QR: ${this.progress.product}/${totalQty} Inner Box: ${this.progress.innerBox}/${totalQty}`
+              : `สำเร็จ! สแกนครบทั้งหมดแล้ว QR: ${this.progress.product}/${totalQty} Inner Box: ${this.progress.innerBox}/${totalQty} Outer Box: ${this.progress.outerBox}/${this.workOrder.outer_box}`
+            this.showSuccessModal = true
+            this._workOrderCompleted = true
+            this.scanInput = ''
+            this.userCode = ''
+            this.$router.push('/');
+            console.log('จบงานแล้วโว้ยPro')
+            return
+          }
+
+          await this.loadProgress()
+        }
+
+        this.scanInput = ''
+        this.userCode = ''
+
+      } catch (error) {
+        this.errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาด'
+        this.requireUserCode = error.response?.data?.requireUserCode || false
+        this.showErrorModal = true
+      }
+    },
+
     closeErrorModal() {
       if (this.requireUserCode && !this.userCode) {
         return
@@ -497,6 +493,68 @@ export default {
       this.errorMessage = ''
       this.requireUserCode = false
       this.scanInput = ''
+      this.$nextTick(() => {
+        if (this.$refs.scanInput) {
+          this.$refs.scanInput.focus()
+        }
+      })
+    },
+
+    handleSuccessClose() {
+      this.showSuccessModal = false
+      this.successMessage = ''
+
+      // ✅ FIX: ปรับการเปลี่ยน step ให้รองรับกรณีมีเศษ
+      const target = this.getTargetCount()
+      const current = this.getCurrentScanned()
+      const totalQty = this.workOrder.order_quantity
+
+      if (current >= target) {
+        if (this.currentStep === 1) {
+          this.currentStep = 2
+          this.currentRoundScans.product = 0
+        } else if (this.currentStep === 2) {
+          // ตรวจสอบว่ายังต้องสแกน outer box หรือไม่
+          if (this.workOrder.outer_box === 0 || this.workOrder.outer_box === '0') {
+            // ไม่มี outer box: ตรวจสอบว่าครบทั้งหมดหรือยัง
+            if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+              // this.$router.push('/')
+              console.log('จบงานแล้วโว้ยไม่มี outer box')
+              return
+            }
+            this.currentStep = 4 // เริ่มรอบใหม่
+          } else {
+            // มี outer box: ตรวจสอบว่ายังต้องสแกน outer box หรือไม่
+            if (this.progress.outerBox < this.workOrder.outer_box) {
+              this.currentStep = 3 // ไปสแกน outer box
+            } else {
+              // สแกน outer box ครบแล้ว แต่อาจยังมีเศษที่ต้องสแกน
+              if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+                // this.$router.push('/')
+                console.log('จบงานแล้วโว้ยสแกน outer box ครบแล้ว')
+                return
+              }
+              this.currentStep = 4 // ไปสแกนเศษที่เหลือ
+            }
+          }
+          this.currentRoundScans.innerBox = 0
+        } else if (this.currentStep === 3) {
+          // หลังสแกน outer box: ตรวจสอบว่าต้องเริ่มรอบใหม่หรือจบงาน
+          if (this.progress.product >= totalQty && this.progress.innerBox >= totalQty) {
+            this.$router.push('/')
+            console.log('จบงานแล้วโว้ยหลังสแกน outer box')
+            return
+          }
+          this.currentStep = 4
+          this.currentRoundScans.product = 0
+          this.currentRoundScans.innerBox = 0
+          this.currentRoundScans.outerBox = 0
+        } else if (this.currentStep === 4) {
+          this.currentStep = 2
+          this.currentRoundScans.product = 0
+        }
+      }
+
       this.$nextTick(() => {
         if (this.$refs.scanInput) {
           this.$refs.scanInput.focus()

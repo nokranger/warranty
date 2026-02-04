@@ -38,6 +38,12 @@ export default {
         console.log('user=====', this.summerize)
       })
     },
+    async exportExcel() {
+      await axios.get(process.env.VUE_APP_API_BASE_URL + `/work-orders-export/summary`).then(response => {
+        this.summerize = response.data.result
+        console.log('user=====', this.summerize)
+      })
+    },
     setting() {
       this.$router.push('/settings');
     },
