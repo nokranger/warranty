@@ -88,12 +88,12 @@
           <button
             @click="processScan(progress.product, progress.innerBox, progress.outerBox, workOrder.order_quantity, workOrder.outer_box)"
             class="btn-scan">สแกน</button>
-          <button @click="resetProcess" class="btn-reset">เซฟงาน</button>
+          <button @click="saveProcess" class="btn-reset">เซฟงาน</button>
           <button @click="showEmergencyFinishModal" class="btn-reset">จบงานฉุกเฉิน</button>
         </div>
       </div>
       <!-- Scan Log Table -->
-       <br>
+      <br>
       <div class="scan-log-panel">
         <h4>ประวัติการสแกน</h4>
 
@@ -233,7 +233,7 @@ export default {
       showEmergencyModal: false,
       emergencyReason: '',
       emergencyUserCode: '',
-      scanLogs: [] 
+      scanLogs: []
     }
   },
   async mounted() {
@@ -504,9 +504,65 @@ export default {
       })
     },
 
-    resetProcess() {
-      if (confirm('ต้องการเริ่มกระบวนการใหม่?')) {
-        this.$router.push('/')
+    async saveProcess() {
+      try {
+        console.log('workOrderSave', this.workOrder)
+
+        if (!this.workOrder || !this.workOrder.id) {
+          alert('Invalid work order data');
+          return;
+        }
+
+        // แสดง confirm dialog
+        if (!confirm('ต้องการบันทึกกระบวนการไหม?')) {
+          return; // ถ้ายกเลิกก็ไม่ทำอะไร
+        }
+
+        // เตรียม payload
+        const payload = {
+          work_order_id: this.workOrder.id,
+          user_id: this.workOrder.user_id || this.$store.state.user?.id || null
+        }
+
+        console.log('Saving process with payload:', payload)
+
+        // เรียก API
+        const response = await axios.post(
+          `${process.env.VUE_APP_API_BASE_URL}/work-orders/saveProcess`,
+          payload
+        );
+
+        console.log('Save response:', response.data)
+
+        if (response.data.success) {
+          // แสดงข้อความสำเร็จ
+          alert(response.data.message || 'บันทึกกระบวนการสำเร็จ');
+
+          // กลับไปหน้าแรก หรือหน้าที่ต้องการ
+          this.$router.push('/');
+
+          // หรือถ้าต้องการ reload ข้อมูล
+          // await this.loadWorkOrderData();
+        } else {
+          alert(response.data.message || 'ไม่สามารถบันทึกกระบวนการได้');
+        }
+
+      } catch (error) {
+        console.error('Error saving process:', error);
+
+        if (error.response) {
+          const errorData = error.response.data;
+
+          if (error.response.status === 404) {
+            alert('ไม่พบใบงานนี้ในระบบ');
+          } else if (error.response.status === 409) {
+            alert(errorData.message || 'ไม่สามารถบันทึกใบงานที่เสร็จสมบูรณ์แล้ว');
+          } else {
+            alert(errorData.message || 'เกิดข้อผิดพลาดในการบันทึก');
+          }
+        } else {
+          alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+        }
       }
     },
 
@@ -545,6 +601,7 @@ export default {
     },
 
     async confirmEmergencyFinish() {
+      // ตรวจสอบว่ากรอกข้อมูลครบหรือไม่
       if (!this.emergencyUserCode.trim()) {
         alert('กรุณากรอกรหัสผู้ใช้')
         return
@@ -560,8 +617,8 @@ export default {
       }
 
       try {
-        const response = await axios.post(process.env.VUE_APP_API_BASE_URL +
-          `/work-orders/${this.workOrderId}/emergency-finish`,
+        const response = await axios.post(
+          `${process.env.VUE_APP_API_BASE_URL}/work-orders/${this.workOrderId}/emergency-finish`,
           {
             userCode: this.emergencyUserCode,
             reason: this.emergencyReason,
@@ -570,16 +627,43 @@ export default {
         )
 
         if (response.data.success) {
-          alert('จบงานฉุกเฉินสำเร็จ\n' +
-            `ชิ้นงานที่สแกน: ${response.data.data.productScanned}\n` +
-            `กล่องในที่สแกน: ${response.data.data.innerBoxScanned}\n` +
-            `กล่องนอกที่สแกน: ${response.data.data.outerBoxScanned}`)
+          alert(
+            'จบงานฉุกเฉินสำเร็จ\n' +
+            `ผู้อนุมัติ: ${response.data.data.supervisorName || this.emergencyUserCode}\n` +
+            `เหตุผล: ${response.data.data.reason}`
+          )
 
+          // รีเซ็ตฟอร์ม
+          this.emergencyUserCode = ''
+          this.emergencyReason = ''
+
+          // กลับไปหน้าแรก
           this.$router.push('/')
         }
+
       } catch (error) {
         console.error('Emergency finish error:', error)
-        alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.error || 'ไม่สามารถจบงานฉุกเฉินได้'))
+
+        if (error.response) {
+          const errorData = error.response.data
+
+          if (error.response.status === 403) {
+            // ไม่มีสิทธิ์ (ไม่ใช่ supervisor)
+            alert('ไม่สามารถดำเนินการได้\n' + (errorData.error || 'เฉพาะ Supervisor เท่านั้น'))
+            // เคลียร์รหัสผู้ใช้ให้กรอกใหม่
+            this.emergencyUserCode = ''
+          } else if (error.response.status === 404) {
+            // ไม่พบ user
+            alert('ไม่พบรหัสผู้ใช้ในระบบ\nกรุณาตรวจสอบและกรอกใหม่')
+            // เคลียร์รหัสผู้ใช้ให้กรอกใหม่
+            this.emergencyUserCode = ''
+          } else {
+            // Error อื่นๆ
+            alert('เกิดข้อผิดพลาด: ' + (errorData.error || 'ไม่สามารถจบงานฉุกเฉินได้'))
+          }
+        } else {
+          alert('เกิดข้อผิดพลาดในการเชื่อมต่อ')
+        }
       }
     }
   },

@@ -27,7 +27,7 @@
         <div class="info-grid">
           <div class="info-item">
             <label>Work Order:</label>
-            <span class="info-value">{{ workOrder.work_order_code }}</span>
+            <span class="info-value">{{ workOrder.orderNo }}</span>
           </div>
           <div class="info-item">
             <label>Item:</label>
@@ -112,16 +112,68 @@ export default {
         this.workOrder = null
       }
     },
-    confirmWorkOrder() {
-      if (this.workOrder) {
-        this.$router.push({
-          name: 'InspectionProcess',
-          params: { workOrderId: this.workOrder.id }
-        })
+    async confirmWorkOrder() {
+      try {
+        console.log('workOrder===', this.workOrder.status)
+
+        if (!this.workOrder || !this.workOrder.work_order_code) {
+          alert('Invalid work order data');
+          return;
+        }
+
+        // เตรียมข้อมูลที่จะส่ง
+        const payload = {
+          work_order_code: this.workOrder.work_order_code,
+          user_id: this.workOrder.user_id || null // ส่ง user_id ถ้ามี
+        }
+
+        console.log('Confirming work order:', payload)
+
+        // ส่ง request ไปยัง API ใหม่
+        const response = await axios.post(
+          process.env.VUE_APP_API_BASE_URL + '/work-orders/scanworkorderConfirm',
+          payload
+        );
+
+        // เช็ค response
+        if (response.data.success) {
+          // ถ้าทุกอย่างปกติ (status เปลี่ยนจาก pending เป็น in_progress สำเร็จ)
+          console.log('Work order confirmed:', response.data.data)
+
+          this.$router.push({
+            name: 'InspectionProcess',
+            params: { workOrderId: response.data.data.id }
+          })
+        } else {
+          // กรณี success: false
+          alert(response.data.message || 'Cannot process work order');
+        }
+
+      } catch (error) {
+        console.error('Error confirming work order:', error);
+
+        // จัดการ error จาก backend
+        if (error.response) {
+          const errorData = error.response.data;
+
+          // แสดงข้อความ error ที่เหมาะสม
+          if (error.response.status === 409) {
+            // Status conflict (already in_progress or completed)
+            alert(errorData.message || 'Cannot proceed with this work order');
+          } else if (error.response.status === 404) {
+            // Work order not found
+            alert('Work order not found');
+          } else {
+            // Error อื่นๆ
+            alert(errorData.message || 'An error occurred');
+          }
+        } else {
+          // Network error
+          alert('Network error. Please try again.');
+        }
       }
     },
     async parseWorkOrderLabel(rawString) {
-      // ตัวอย่าง: "L0501BA1HU3060286=G             70000000000009700000BA1FIG-030                U3813                    13023936  2025111820251118000000000400000SHOCK  ABSORBER  FR                                    *"
       const user = JSON.parse(localStorage.getItem('user'))
       const result = {
         work_order_code: rawString,
@@ -235,19 +287,63 @@ export default {
           result.outerbox_qty = Math.floor(result.outerbox_qty)
       }
       console.log('parseLine=========', result)
-      const response = await axios.post(process.env.VUE_APP_API_BASE_URL + '/work-orders/scanworkorder', result);
-      this.searchWorkOrder(rawString)
-      // if (response.data.success) {
-      //     this.message = 'บันทึกข้อมูลสำเร็จ!';
-      //     this.$toast.success('Work Order saved successfully!');
+      try {
+        const response = await axios.post(
+          process.env.VUE_APP_API_BASE_URL + '/work-orders/scanworkorder',
+          result
+        );
 
-      //     // Clear input
-      //     // this.scannedData = '';
+        console.log('API Response:', response.data);
 
-      //     // Callback หรือ refresh data
-      //     this.$emit('saved', response.data.data);
-      //   }
+        // ตรวจสอบ status
+        if (response.data.success) {
+          const status = response.data.data?.status;
 
+          if (status === 'completed') {
+            if (confirm('ใบงานนี้ดำเนินการเสร็จสิ้นแล้ว\nกรุณาสแกนใบงานใหม่')) {
+              this.manualCode = ''
+            }
+            return null;
+          }
+
+          if (status === 'in_progress') {
+            if (confirm('ใบงานนี้ดำเนินการเสร็จสิ้นแล้ว\nกรุณาสแกนใบงานใหม่')) {
+              this.manualCode = ''
+            }
+            return null;
+          }
+
+          // pending ให้ทำต่อ
+          this.searchWorkOrder(rawString);
+          return result;
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+
+        if (error.response?.data) {
+          const status = error.response.data.data?.status;
+
+          if (status === 'completed') {
+            if (confirm('ใบงานนี้ดำเนินการเสร็จสิ้นแล้ว\nกรุณาสแกนใบงานใหม่')) {
+              this.manualCode = ''
+            }
+          } else if (status === 'in_progress') {
+            if (confirm('ใบงานนี้ดำเนินการเสร็จสิ้นแล้ว\nกรุณาสแกนใบงานใหม่')) {
+              this.manualCode = ''
+            }
+          } else {
+            // alert(error.response.data.message || 'เกิดข้อผิดพลาด');
+            if (confirm(error.response.data.message || 'เกิดข้อผิดพลาด')) {
+              this.manualCode = ''
+            }
+          }
+        } else {
+          alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+
+        return null;
+      }
       return result;
     }
   }
