@@ -4,7 +4,7 @@
       <div class="header-info">
         <h2>กระบวนการตรวจสอบ</h2>
         <div v-if="workOrder" class="work-order-summary">
-          <p><strong>WO:</strong> {{ workOrder.work_order_code }}</p>
+          <p><strong>WO:</strong> {{ workOrder.orderNo }}</p>
           <p><strong>Item ID:</strong> {{ workOrder.item_id }}</p>
           <p><strong>Item:</strong> {{ workOrder.item }}</p>
           <p><strong>Customer ID:</strong> {{ workOrder.customer_id }}</p>
@@ -16,8 +16,7 @@
 
         <!-- STEP 1 : QR -->
         <div class="step" :class="{
-          active: currentStep === 1 || currentStep === 4,
-          completed: progress.product > 0
+          active: currentStep === 1 || currentStep === 4
         }">
           <div class="step-number">1</div>
           <div class="step-label">สแกน QR</div>
@@ -25,8 +24,7 @@
 
         <!-- STEP 2 : INNER -->
         <div class="step" :class="{
-          active: currentStep === 2,
-          completed: progress.innerBox > 0
+          active: currentStep === 2
         }">
           <div class="step-number">2</div>
           <div class="step-label">สแกนกล่องใน</div>
@@ -34,9 +32,8 @@
 
         <!-- STEP 3 : OUTER -->
         <div class="step" :class="{
-          active: currentStep === 3,
-          completed: progress.outerBox > 0
-        }">
+          active: currentStep === 3
+        }" v-if="workOrder.outer_box > 0">
           <div class="step-number">3</div>
           <div class="step-label">สแกนกล่องนอก</div>
         </div>
@@ -139,8 +136,14 @@
 
             <div class="emergency-form">
               <div class="form-group">
+                <label for="userCode">ชื่อผู้ใช้:</label>
+                <input v-model="emergencyUserCode" type="password" id="userCode" placeholder="กรอกชื่อผู้ใช้"
+                  @keyup.enter="focusReasonInput" ref="emergencyUserInput" />
+              </div>
+
+              <div class="form-group">
                 <label for="userCode">รหัสผู้ใช้:</label>
-                <input v-model="emergencyUserCode" type="password" id="userCode" placeholder="กรอกรหัสผู้ใช้"
+                <input v-model="emergencyUserPass" type="password" id="userCode" placeholder="กรอกรหัสผู้ใช้"
                   @keyup.enter="focusReasonInput" ref="emergencyUserInput" />
               </div>
 
@@ -233,6 +236,7 @@ export default {
       showEmergencyModal: false,
       emergencyReason: '',
       emergencyUserCode: '',
+      emergencyUserPass: '',
       scanLogs: []
     }
   },
@@ -262,6 +266,22 @@ export default {
     },
     async processScan() {
       if (!this.scanInput.trim()) return
+
+      // ✅ แบบมีข้อความเตือน
+      const thaiRegex = /[\u0E00-\u0E7F]/
+      if (thaiRegex.test(this.scanInput)) {
+        // แสดงข้อความเตือนแบบเงียบๆ (optional)
+        console.log('ตรวจพบภาษาไทย กรุณาสแกนใหม่')
+
+        // เคลียร์และให้สแกนใหม่
+        this.scanInput = ''
+        this.$nextTick(() => {
+          if (this.$refs.scanInput) {
+            this.$refs.scanInput.focus()
+          }
+        })
+        return
+      }
 
       try {
         const snp = Number(this.workOrder.snp_quantity)
@@ -362,6 +382,8 @@ export default {
             userId: user.id,
             timestamp: new Date().toISOString()
           })
+          // await this.buildStructuredData(this.scanLogs, snp)
+          // console.log('dataPush', await this.buildStructuredData())
         }
 
         /* =====================
@@ -393,6 +415,57 @@ export default {
         this.requireUserCode = error.response?.data?.requireUserCode || false
         this.showErrorModal = true
       }
+    },
+    buildStructuredData(scanLogs, snpQuantity) {
+      // 1. แยก log ตาม type & round
+      const productLogs = scanLogs
+        .filter(log => log.type === 'product')
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      const innerLogs = scanLogs
+        .filter(log => log.type === 'inner')
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // ลำดับเวลา: 5→1 อาจเป็น reverse
+
+      const outerLogs = scanLogs
+        .filter(log => log.type === 'outer')
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      // 2. จัดกลุ่ม product เป็น chunks ขนาด snpQuantity
+      const chunks = [];
+      for (let i = 0; i < productLogs.length; i += snpQuantity) {
+        chunks.push(productLogs.slice(i, i + snpQuantity));
+      }
+
+      // 3. สร้าง data แบบ items
+      const data = [];
+      let round = 1;
+
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const productsInChunk = chunks[chunkIndex];
+        const currentRound = Math.floor(chunkIndex / (innerLogs.length || 1)) + 1; // หรือใช้ log.round ถ้ามี
+
+        // หา inner box สำหรับ chunk นี้
+        const innerLog = innerLogs[chunkIndex] || null;
+        const outerLog = outerLogs.find(log => log.round === currentRound) || null;
+
+        const items = productsInChunk.map(p => ({
+          product: p.code,
+          innerBox: innerLog ? innerLog.code : null,
+          outerBox: outerLog ? outerLog.code : null
+        }));
+
+        data.push({
+          round: currentRound,
+          items
+        });
+
+        // อัปเดต round เมื่อเริ่ม chunk ใหม่ที่เป็น inner ชุดใหม่
+        if ((chunkIndex + 1) % innerLogs.length === 0 && innerLogs.length > 0) {
+          round++;
+        }
+      }
+
+      return { data };
     },
     decideNextStep(product, inner, outer) {
       const snp = Number(this.workOrder.snp_quantity)
@@ -607,6 +680,11 @@ export default {
         return
       }
 
+      if (!this.emergencyUserPass.trim()) {
+        alert('กรุณากรอกรหัสผ่าน')
+        return
+      }
+
       if (!this.emergencyReason.trim()) {
         alert('กรุณากรอกเหตุผล')
         return
@@ -621,6 +699,7 @@ export default {
           `${process.env.VUE_APP_API_BASE_URL}/work-orders/${this.workOrderId}/emergency-finish`,
           {
             userCode: this.emergencyUserCode,
+            userPass: this.emergencyUserPass,
             reason: this.emergencyReason,
             currentStep: this.currentStep
           }
@@ -635,6 +714,7 @@ export default {
 
           // รีเซ็ตฟอร์ม
           this.emergencyUserCode = ''
+          this.emergencyUserPass = ''
           this.emergencyReason = ''
 
           // กลับไปหน้าแรก
@@ -647,16 +727,23 @@ export default {
         if (error.response) {
           const errorData = error.response.data
 
-          if (error.response.status === 403) {
+          if (error.response.status === 401) {
+            // รหัสผ่านไม่ถูกต้อง
+            alert('รหัสผ่านไม่ถูกต้อง\nกรุณากรอกใหม่')
+            // เคลียร์รหัสผ่าน
+            this.emergencyUserPass = ''
+          } else if (error.response.status === 403) {
             // ไม่มีสิทธิ์ (ไม่ใช่ supervisor)
             alert('ไม่สามารถดำเนินการได้\n' + (errorData.error || 'เฉพาะ Supervisor เท่านั้น'))
-            // เคลียร์รหัสผู้ใช้ให้กรอกใหม่
+            // เคลียร์ทั้ง username และ password
             this.emergencyUserCode = ''
+            this.emergencyUserPass = ''
           } else if (error.response.status === 404) {
             // ไม่พบ user
             alert('ไม่พบรหัสผู้ใช้ในระบบ\nกรุณาตรวจสอบและกรอกใหม่')
-            // เคลียร์รหัสผู้ใช้ให้กรอกใหม่
+            // เคลียร์ทั้ง username และ password
             this.emergencyUserCode = ''
+            this.emergencyUserPass = ''
           } else {
             // Error อื่นๆ
             alert('เกิดข้อผิดพลาด: ' + (errorData.error || 'ไม่สามารถจบงานฉุกเฉินได้'))
