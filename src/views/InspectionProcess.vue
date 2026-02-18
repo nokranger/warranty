@@ -301,13 +301,17 @@ export default {
 
         // ===== CASE A: snp = 1 หรือไม่มี outer =====
         if (snp === 1 || outerLimit === 0) {
-          if (product < totalQty) {
-            nextStep = product === 0 ? 1 : 4
-            endpoint = '/scan/product'
-          }
-          else if (inner < totalQty) {
+
+          // ถ้า product มากกว่า inner → ต้องสแกน inner ก่อน
+          if (product > inner) {
             nextStep = 2
             endpoint = '/scan/inner-box'
+          }
+
+          // ถ้า product เท่ากับ inner → สแกน product
+          else if (product === inner && product < totalQty) {
+            nextStep = product === 0 ? 1 : 4
+            endpoint = '/scan/product'
           }
         }
 
@@ -346,6 +350,74 @@ export default {
 
         if (!endpoint) return
 
+        // ===== PRODUCT ต้องขึ้นต้นด้วย SA =====
+        if (endpoint.includes('product')) {
+          if (!this.scanInput.startsWith('SA')) {
+            this.errorMessage = 'QR ต้องขึ้นต้นด้วย SA'
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+        }
+
+        /* =====================
+         * ✅ INNER BOX VALIDATION
+         * ===================== */
+        if (endpoint.includes('inner-box')) {
+
+          const parts = this.scanInput.split('-')
+          const code = parts[0] // E20025
+
+          if (code !== this.workOrder.customer_id) {
+            this.errorMessage = 'Inner Box ไม่ตรง Customer'
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+        }
+
+
+        /* =====================
+         * ✅ OUTER BOX VALIDATION
+         * ===================== */
+        if (endpoint.includes('outer-box')) {
+
+          const parts = this.scanInput.split('-')
+          const code = parts[0]        // E20025
+          const lastNumberRaw = parts[2] // 01
+
+          const lastNumber = parseInt(lastNumberRaw, 10) // ตัด 0 ข้างหน้า
+
+          // 1️⃣ เช็ค customer
+          if (code !== this.workOrder.customer_id) {
+            this.errorMessage = 'Outer Box ไม่ตรง Customer'
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+
+          // 2️⃣ ห้ามเป็น -01
+          if (lastNumber === 1) {
+            this.errorMessage = 'Outer Box ห้ามลงท้าย -01 กรุณาสแกนใหม่'
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+
+          // 3️⃣ ต้องตรงกับ snp_quantity
+          if (lastNumber !== Number(this.workOrder.snp_quantity)) {
+            this.errorMessage = `Outer Box ต้องลงท้าย ${this.workOrder.snp_quantity}`
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+        }
+
         /* =====================
          * 2) ยิง API ก่อน (สำคัญ!)
          * ===================== */
@@ -382,8 +454,6 @@ export default {
             userId: user.id,
             timestamp: new Date().toISOString()
           })
-          // await this.buildStructuredData(this.scanLogs, snp)
-          // console.log('dataPush', await this.buildStructuredData())
         }
 
         /* =====================
@@ -468,28 +538,51 @@ export default {
       return { data };
     },
     decideNextStep(product, inner, outer) {
+
       const snp = Number(this.workOrder.snp_quantity)
       const totalQty = Number(this.workOrder.order_quantity)
       const outerLimit = Number(this.workOrder.outer_box)
 
-      // ===== ไม่มี outer หรือ snp = 1 =====
+      // ===== CASE A: snp = 1 หรือไม่มี outer =====
       if (snp === 1 || outerLimit === 0) {
-        if (product < totalQty) return product === 0 ? 1 : 4
-        if (inner < totalQty) return 2
-        return null
+
+        if (product > inner) {
+          return 2 // inner
+        }
+
+        if (product === inner && product < totalQty) {
+          return product === 0 ? 1 : 4 // product
+        }
       }
 
-      // ===== มี outer =====
-      const roundTarget = Math.min((outer + 1) * snp, totalQty)
+      // ===== CASE B: snp > 1 =====
+      const completedRounds = outer
+      const roundTarget = Math.min(
+        (completedRounds + 1) * snp,
+        totalQty
+      )
 
-      if (product < roundTarget) return product === 0 ? 1 : 4
-      if (inner < roundTarget) return 2
-      if (outer < outerLimit && roundTarget % snp === 0) return 3
+      if (product < roundTarget) {
+        return product === 0 ? 1 : 4
+      }
 
-      if (product < totalQty) return 4
-      if (inner < totalQty) return 2
+      if (inner < roundTarget) {
+        return 2
+      }
 
-      return null
+      if (outer < outerLimit && roundTarget % snp === 0) {
+        return 3
+      }
+
+      if (product < totalQty) {
+        return 4
+      }
+
+      if (inner < totalQty) {
+        return 2
+      }
+
+      return this.currentStep
     },
     finishWorkOrder() {
       this.successMessage = `สำเร็จ!
