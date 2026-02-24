@@ -237,7 +237,9 @@ export default {
       emergencyReason: '',
       emergencyUserCode: '',
       emergencyUserPass: '',
-      scanLogs: []
+      scanLogs: [],
+      scanSessions: [],       // [ { round, products, inners, outer } ]
+      currentSession: null,  // session ที่กำลัง build อยู่
     }
   },
   async mounted() {
@@ -367,10 +369,32 @@ export default {
         if (endpoint.includes('inner-box')) {
 
           const parts = this.scanInput.split('-')
-          const code = parts[0] // E20025
 
+          // ป้องกันกรณี format ไม่ครบ
+          if (parts.length < 3) {
+            this.errorMessage = 'รูปแบบ Inner Box ไม่ถูกต้อง'
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+
+          const code = parts[0]           // E20025
+          const lastNumberRaw = parts[2]  // 01
+          const lastNumber = parseInt(lastNumberRaw, 10)
+
+          // 1️⃣ เช็ค customer
           if (code !== this.workOrder.customer_id) {
             this.errorMessage = 'Inner Box ไม่ตรง Customer'
+            this.showErrorModal = true
+            this.scanInput = ''
+            this.$nextTick(() => this.$refs.scanInput?.focus())
+            return
+          }
+
+          // 2️⃣ เลขท้ายต้องเป็น 1 เท่านั้น
+          if (lastNumber !== 1) {
+            this.errorMessage = 'Inner Box ต้องลงท้าย -01 เท่านั้น'
             this.showErrorModal = true
             this.scanInput = ''
             this.$nextTick(() => this.$refs.scanInput?.focus())
@@ -434,23 +458,51 @@ export default {
 
         if (response.data.success) {
           let type = ''
+          const snp = Number(this.workOrder.snp_quantity)
+          const outerLimit = Number(this.workOrder.outer_box)
+
           if (endpoint.includes('product')) {
             this.progress.product++
             type = 'product'
+
+            // product ตัวแรกสุด หรือ product ตัวแรกของรอบใหม่ → เริ่ม session ใหม่
+            const productsInCurrentSession = this.currentSession?.products.length ?? 0
+            const isStartOfNewRound = !this.currentSession || productsInCurrentSession >= snp
+
+            if (isStartOfNewRound) {
+              this._startNewSession()
+            }
+
+            this.currentSession.products.push(this.scanInput)
           }
+
           if (endpoint.includes('inner')) {
             this.progress.innerBox++
             type = 'inner'
+
+            // ถ้าไม่มี session (edge case) → สร้างใหม่
+            if (!this.currentSession) this._startNewSession()
+            this.currentSession.inners.push(this.scanInput)
           }
+
           if (endpoint.includes('outer')) {
             this.progress.outerBox++
             type = 'outer'
+
+            if (!this.currentSession) this._startNewSession()
+            this.currentSession.outers = this.scanInput
+
+            // outer สแกนแล้ว = จบ round นี้ → บันทึกทันที
+            this.scanSessions.push({ ...this.currentSession })
+            this.currentSession = null
           }
+
+          // scanLogs เดิม
           this.scanLogs.push({
             workOrderId: this.workOrderId,
             type,
             code: this.scanInput,
-            round: Math.floor(this.progress.product / this.workOrder.snp_quantity) + 1,
+            round: Math.floor(this.progress.product / snp) + 1,
             userId: user.id,
             timestamp: new Date().toISOString()
           })
@@ -584,7 +636,12 @@ export default {
 
       return this.currentStep
     },
-    finishWorkOrder() {
+    async finishWorkOrder() {
+      this._flushCurrentSession()
+
+      await this.saveScanSessions()
+
+      console.log('📦 scanSessions:', JSON.stringify(this.scanSessions, null, 2))
       this.successMessage = `สำเร็จ!
       QR: ${this.progress.product}/${this.workOrder.order_quantity}
       Inner: ${this.progress.innerBox}/${this.workOrder.order_quantity}
@@ -810,6 +867,10 @@ export default {
           this.emergencyUserPass = ''
           this.emergencyReason = ''
 
+          this._flushCurrentSession()
+
+          await this.saveScanSessions()
+
           // กลับไปหน้าแรก
           this.$router.push('/')
         }
@@ -845,7 +906,57 @@ export default {
           alert('เกิดข้อผิดพลาดในการเชื่อมต่อ')
         }
       }
-    }
+    },
+    _startNewSession() {
+      if (this.currentSession) {
+        this.scanSessions.push({ ...this.currentSession })
+      }
+      this.currentSession = {
+        round: this.scanSessions.length + 1,
+        products: [],
+        inners: [],
+        outers: null,
+      }
+    },
+
+    // flush session ปัจจุบัน (ใช้ตอนจบงาน)
+    _flushCurrentSession() {
+      if (this.currentSession) {
+        this.scanSessions.push({ ...this.currentSession })
+        this.currentSession = null
+      }
+    },
+
+    // export JSON สำหรับ debug หรือส่ง API
+    exportScanSessions() {
+      this._flushCurrentSession()
+      return JSON.stringify(this.scanSessions, null, 2)
+    },
+    async saveScanSessions() {
+      if (this.scanSessions.length === 0) return
+
+      const user = JSON.parse(localStorage.getItem('user'))
+
+      try {
+        const response = await axios.post(
+          `${process.env.VUE_APP_API_BASE_URL}/work-orders/${this.workOrderId}/scan-sessions`,
+          {
+            sessions: this.scanSessions,  // [ { round, products, inners, outer } ]
+            user_id: user?.id ?? null,
+          }
+        )
+
+        if (response.data.success) {
+          console.log(`✅ บันทึก ${this.scanSessions.length} sessions สำเร็จ`)
+        }
+      } catch (error) {
+        // ไม่ block การจบงาน แต่แจ้ง error ให้รู้
+        console.error('❌ บันทึก scan sessions ล้มเหลว:', error.response?.data?.error || error.message)
+        // optional: แสดง toast แจ้ง user
+        // this.errorMessage = 'บันทึก session ล้มเหลว กรุณาติดต่อ admin'
+        // this.showErrorModal = true
+      }
+    },
   },
   computed: {
     scanningStatus() {
@@ -866,7 +977,26 @@ export default {
       const target = this.getTargetCount()
       const current = this.getCurrentScanned()
       return target > 0 ? Math.round((current / target) * 100) : 0
-    }
+    },
+    sessionSummary() {
+      const snp = Number(this.workOrder?.snp_quantity || 1)
+      const outerLimit = Number(this.workOrder?.outer_box || 0)
+
+      const sessions = [...this.scanSessions]
+      if (this.currentSession) sessions.push(this.currentSession)
+
+      return sessions.map(s => ({
+        round: s.round,
+        productCount: s.products.length,
+        innerCount: s.inners.length,
+        outers: s.outers,
+        isComplete:
+          s.products.length >= snp &&
+          s.inners.length >= snp &&
+          (outerLimit === 0 || s.outers !== null),
+        missingOuter: outerLimit > 0 && s.outers === null,
+      }))
+    },
   }
 }
 </script>
