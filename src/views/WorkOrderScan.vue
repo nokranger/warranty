@@ -230,7 +230,7 @@ export default {
         result.order_quantity = parseInt(result.order_quantity);
       }
 
-      const snpqtyMatch = rawString.match(/\d{8}\d{8}0{5}(\d{1,10})([A-Z\s]+?)\s*\*?\s*$/);
+      const snpqtyMatch = rawString.match(/\d{8}\d{8}0{5}(\d{1,10})([A-Z\s,]+?)\s*\*?\s*$/);
       // console.log('snp====', snpqtyMatch)
       if (snpqtyMatch) {
         result.snp_quantity = (snpqtyMatch[1]); // 10 จากตัวอย่าง
@@ -246,7 +246,7 @@ export default {
       }
 
       // Parse Customer ID (B3355, U3813, etc.)
-      const customerIdMatch = rawString.match(/BA\dFIG-\d+\s+([A-Z]\d{4,5})\s+\d{8}/);
+      const customerIdMatch = rawString.match(/BA\dFIG-\d+\s+([A-Z0-9,]+)\s+\d{8}/);
       // console.log('cusid', customerIdMatch)
       // console.log('cusid', rawString.match(/([A-Z]+FIG-\d+)\s+([A-Z]\d+)\s+/))
       if (customerIdMatch) {
@@ -271,7 +271,7 @@ export default {
       // หา Item Name (SHOCK  ABSORBER  FR) - หลังวันที่และเลข 0
       // รูปแบบ: 20251118 + 000000000400000 + SHOCK  ABSORBER  FR
       // เก็บเป็น customer_id (ถ้าต้องการ)
-      const itemNameMatch = rawString.match(/\d{8}\d{8}(\d+)([A-Z\s]+?)\s*\*?\s*$/);
+      const itemNameMatch = rawString.match(/\d{8}\d{8}(\d+)([A-Z\s,]+?)\s*\*?\s*$/);
       if (itemNameMatch) {
         result.item = itemNameMatch[2].trim(); // ใช้เป็น customer name
       }

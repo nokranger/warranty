@@ -137,7 +137,7 @@
             <div class="emergency-form">
               <div class="form-group">
                 <label for="userCode">ชื่อผู้ใช้:</label>
-                <input v-model="emergencyUserCode" type="password" id="userCode" placeholder="กรอกชื่อผู้ใช้"
+                <input v-model="emergencyUserCode" type="text" id="userCode" placeholder="กรอกชื่อผู้ใช้"
                   @keyup.enter="focusReasonInput" ref="emergencyUserInput" />
               </div>
 
@@ -275,7 +275,6 @@ export default {
         // แสดงข้อความเตือนแบบเงียบๆ (optional)
         console.log('ตรวจพบภาษาไทย กรุณาสแกนใหม่')
 
-        // เคลียร์และให้สแกนใหม่
         this.scanInput = ''
         this.$nextTick(() => {
           if (this.$refs.scanInput) {
@@ -284,7 +283,9 @@ export default {
         })
         return
       }
-
+      // ✅ ตัด URL เอาเฉพาะส่วนท้ายหลัง "/"
+      const raw = this.scanInput.trim()
+      this.scanInput = raw.includes('/') ? raw.split('/').pop() : raw
       try {
         const snp = Number(this.workOrder.snp_quantity)
         const totalQty = Number(this.workOrder.order_quantity)
