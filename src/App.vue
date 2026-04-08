@@ -35,7 +35,7 @@ export default {
     }
   },
   async mounted() {
-    // await this.checkLogin()
+    await this.checkLogin()
     // const user = JSON.parse(localStorage.getItem('user'))
     // console.log('users', user)
     // this.users = user.username
@@ -56,7 +56,7 @@ export default {
       localStorage.removeItem('user')
       this.$router.push('/login');
     },
-    checkLogin() {
+    async checkLogin() {
       const user = JSON.parse(localStorage.getItem('user'))
 
       if (!user || !user.username) {

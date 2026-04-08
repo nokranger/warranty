@@ -38,9 +38,9 @@
             <input type="date" v-model="endDate1" class="date-input" />
           </div>
 
-          <button class="search-btn" @click="fetchScanHistory()" :disabled="loading">
-            <span v-if="loading" class="spinner"></span>
-            <span v-else>🔍 ค้นหา</span>
+          <button class="search-btn" @click="fetchScanHistory()">
+            <!-- <span v-if="loading" class="spinner"></span> -->
+            <span>🔍 ค้นหา</span>
           </button>
         </div>
       </div>
@@ -62,9 +62,9 @@
             <input type="date" v-model="endDate2" class="date-input" />
           </div>
 
-          <button class="search-btn" @click="exportExcel()" :disabled="loading">
-            <span v-if="loading" class="spinner"></span>
-            <span v-else>🔍 ค้นหา</span>
+          <button class="search-btn" @click="exportExcel()">
+            <!-- <span v-if="loading" class="spinner"></span> -->
+            <span>🔍 ค้นหา</span>
           </button>
 
           <!-- <button class="reset-btn" @click="resetFilter">รีเซ็ต</button> -->
