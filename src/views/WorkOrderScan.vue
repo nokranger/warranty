@@ -224,19 +224,38 @@ export default {
       // หา Ordered Qty (97) - อยู่หลัง 70000
       // รูปแบบ: 70000 + 00000000 + 97 + 00000
       const qtyMatch = rawString.match(/70000(\d{8})(\d{2,3})(\d{5})/);
-      console.log('result.snp_quantity=====', qtyMatch)
+      // console.log('result.snp_quantity=====', qtyMatch)
       if (qtyMatch) {
         result.order_quantity = qtyMatch[1] + qtyMatch[2]
         result.order_quantity = parseInt(result.order_quantity);
       }
 
-      const snpqtyMatch = rawString.match(/\d{8}\d{8}0{5}(\d{1,10})([A-Z\s]+?)\s*\*?\s*$/);
-      console.log('snp====', snpqtyMatch)
-      if (snpqtyMatch) {
-        result.snp_quantity = (snpqtyMatch[1]); // 10 จากตัวอย่าง
-        result.snp_quantity = (result.snp_quantity.slice(0, -5))
-        result.snp_quantity = parseInt(result.snp_quantity)
-      }
+      const trimmed = rawString.trim();
+      const starPos = trimmed.lastIndexOf("*");
+      const chunk = trimmed.substring(starPos - 70, starPos - 55); // "000000000100000"
+      result.snp_quantity = parseInt(chunk.substring(0, 10)); // "0000000001" → 1, "0000000000" → 0
+      console.log('snp====', result.snp_quantity);
+
+      // const snpqtyMatch = rawString.match(/\d{8}\d{8}0{5}(\d{1,10})([A-Z\s]+?)\s*\*?\s*$/);
+      // console.log('snp====', snpqtyMatch)
+      // if (snpqtyMatch) {
+      // result.snp_quantity = (snpqtyMatch[1]); // 10 จากตัวอย่าง
+      // result.snp_quantity = (result.snp_quantity.slice(0, -5))
+      // result.snp_quantity = parseInt(result.snp_quantity)
+      // }
+      // const starIndex = rawString.lastIndexOf('*');
+
+      // if (starIndex !== -1 && starIndex >= 55) {
+      //   const block = rawString.substring(starIndex - 55, starIndex - 40);
+
+      //   if (/^\d{15}$/.test(block)) {
+      //     const qtyStr = block.substring(0, 5);
+      //     result.snp_quantity = parseInt(qtyStr, 10);
+      //   } else {
+      //     console.warn('Invalid SNP block:', block);
+      //   }
+      //   console.log('result.snp_quantity=====', result.snp_quantity)
+      // }
 
       // หา Subinventory (BA1FIG-030 หรือ BAIFIG-030)
       // รูปแบบ: ตัวเลขหลายตัว + BA1FIG-030 หรือ BAIFIG-030
