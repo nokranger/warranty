@@ -230,8 +230,8 @@ export default {
         result.order_quantity = parseInt(result.order_quantity);
       }
 
-      const snpqtyMatch = rawString.match(/\d{8}\d{8}0{5}(\d{1,10})([A-Z\s,]+?)\s*\*?\s*$/);
-      // console.log('snp====', snpqtyMatch)
+      const snpqtyMatch = rawString.match(/\d{8}\d{8}0{5}(\d{1,10})([A-Z\s]+?)\s*\*?\s*$/);
+      console.log('snp====', snpqtyMatch)
       if (snpqtyMatch) {
         result.snp_quantity = (snpqtyMatch[1]); // 10 จากตัวอย่าง
         result.snp_quantity = (result.snp_quantity.slice(0, -5))

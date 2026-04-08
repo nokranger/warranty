@@ -67,10 +67,12 @@
           </div>
 
           <!-- เพิ่มส่วนนี้เพื่อแสดงรอบที่กำลังทำ -->
-          <div class="progress-item highlight-box" v-if="progress.outerBox > 0">
+          <div class="progress-item highlight-box" v-if="progress.outerBox > 0 && progress.innerBox > 0">
             <label>รอบที่:</label>
-            <span class="progress-value highlight">{{ Math.floor(progress.product / workOrder.snp_quantity) + 1
-            }}</span>
+            <span class="progress-value highlight">
+              {{ workOrder.outer_box > 0 ? progress.outerBox + 1 : Math.floor(progress.innerBox /
+                workOrder.snp_quantity) + 1 }}
+            </span>
           </div>
         </div>
         <div class="scanner-input">
@@ -261,6 +263,12 @@ export default {
       try {
         const response = await axios.get(process.env.VUE_APP_API_BASE_URL + `/work-orders/${this.workOrderId}/progress`)
         this.progress = response.data.progress
+
+        this.currentStep = this.decideNextStep(
+          this.progress.product,
+          this.progress.innerBox,
+          this.progress.outerBox
+        )
         // this.updateCurrentStep()
       } catch (error) {
         console.error('Error loading progress:', error)
